@@ -41,6 +41,10 @@ export const registerSchema = z.object({
   name: z.string().trim().min(2, "Informe seu nome").max(120),
   email: emailSchema,
   password: passwordSchema,
+  acceptTerms: booleanField.refine(
+    (value) => value === true,
+    "É preciso aceitar os Termos de Uso e a Política de Privacidade",
+  ),
 });
 
 export const loginSchema = z.object({

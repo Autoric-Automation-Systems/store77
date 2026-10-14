@@ -91,6 +91,7 @@ export async function registerStoreAction(
       email,
       passwordHash,
       role: "OWNER",
+      termsAcceptedAt: new Date(),
     })
     .returning({ id: users.id });
 

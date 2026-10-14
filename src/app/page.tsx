@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import { Brand } from "@/components/brand";
+import { SiteFooter } from "@/components/site-footer";
 
 const MODULES = [
   {
@@ -101,9 +102,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="mx-auto max-w-6xl px-6 py-10 text-sm text-ink-500">
-        Store77 · Next.js + Neon + Vercel
-      </footer>
+      <SiteFooter />
     </main>
   );
 }

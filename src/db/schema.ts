@@ -115,6 +115,8 @@ export const users = pgTable(
     role: userRole("role").notNull().default("VENDEDOR"),
     phone: text("phone"),
     active: boolean("active").notNull().default(true),
+    // Prova de aceite dos Termos de Uso e da Política de Privacidade.
+    termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
     ...timestamps,
   },
   (table) => [

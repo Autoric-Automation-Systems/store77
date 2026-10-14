@@ -102,6 +102,37 @@ export function RegisterForm() {
           ) : null}
         </div>
 
+        <label className="flex items-start gap-3 rounded-xl border border-ink-200 bg-ink-50 px-4 py-3">
+          <input
+            type="checkbox"
+            name="acceptTerms"
+            required
+            className="mt-0.5 size-4 shrink-0 rounded border-ink-300"
+          />
+          <span className="text-xs leading-relaxed text-ink-600">
+            Li e aceito os{" "}
+            <Link
+              href="/termos"
+              target="_blank"
+              className="font-semibold text-brand-700 underline decoration-brand-300 underline-offset-2"
+            >
+              Termos de Uso
+            </Link>{" "}
+            e a{" "}
+            <Link
+              href="/privacidade"
+              target="_blank"
+              className="font-semibold text-brand-700 underline decoration-brand-300 underline-offset-2"
+            >
+              Política de Privacidade
+            </Link>
+            .
+          </span>
+        </label>
+        {state.fieldErrors?.acceptTerms ? (
+          <p className="text-xs text-red-600">{state.fieldErrors.acceptTerms}</p>
+        ) : null}
+
         <SubmitButton
           className="btn btn-primary w-full"
           pendingLabel="Criando loja..."

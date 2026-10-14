@@ -42,16 +42,16 @@ BEGIN
     true, false
   ) RETURNING id INTO v_store_id;
 
-  INSERT INTO users (store_id, name, email, password_hash, role)
-  VALUES (v_store_id, 'Ana Ribeiro', 'demo@store77.app', v_hash, 'OWNER')
+  INSERT INTO users (store_id, name, email, password_hash, role, terms_accepted_at)
+  VALUES (v_store_id, 'Ana Ribeiro', 'demo@store77.app', v_hash, 'OWNER', now())
   RETURNING id INTO v_owner_id;
 
-  INSERT INTO users (store_id, name, email, password_hash, role)
-  VALUES (v_store_id, 'Carlos Menezes', 'gerente@store77.app', v_hash, 'GERENTE')
+  INSERT INTO users (store_id, name, email, password_hash, role, terms_accepted_at)
+  VALUES (v_store_id, 'Carlos Menezes', 'gerente@store77.app', v_hash, 'GERENTE', now())
   RETURNING id INTO v_manager_id;
 
-  INSERT INTO users (store_id, name, email, password_hash, role)
-  VALUES (v_store_id, 'Juliana Prado', 'vendedor@store77.app', v_hash, 'VENDEDOR')
+  INSERT INTO users (store_id, name, email, password_hash, role, terms_accepted_at)
+  VALUES (v_store_id, 'Juliana Prado', 'vendedor@store77.app', v_hash, 'VENDEDOR', now())
   RETURNING id INTO v_seller_id;
 
   INSERT INTO categories (store_id, name, slug, kind, description, sort_order) VALUES

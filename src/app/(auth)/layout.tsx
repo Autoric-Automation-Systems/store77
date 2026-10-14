@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { Brand } from "@/components/brand";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
@@ -10,6 +11,19 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       <main className="flex flex-1 items-start justify-center px-6 pb-16">
         <div className="w-full max-w-md">{children}</div>
       </main>
+      <footer className="px-6 py-6">
+        <div className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm">
+          <Link href="/ajuda" className="text-ink-500 hover:text-ink-800">
+            Ajuda
+          </Link>
+          <Link href="/termos" className="text-ink-500 hover:text-ink-800">
+            Termos de Uso
+          </Link>
+          <Link href="/privacidade" className="text-ink-500 hover:text-ink-800">
+            Política de Privacidade
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -34,15 +34,15 @@ cp .env.example .env.local
 
 ```bash
 npm install
-npm run db:migrate    # aplica drizzle/0000_initial.sql
+npm run db:migrate    # aplica drizzle/0000_initial.sql e drizzle/0001_terms_accepted.sql
 ```
 
 Alternativas:
 
 - `npm run db:push` — sincroniza o schema sem versionar migração.
 - `npm run db:studio` — navegador visual dos dados.
-- **Sem CLI:** cole o conteúdo de [`drizzle/0000_initial.sql`](./drizzle/0000_initial.sql)
-  no SQL Editor do Neon.
+- **Sem CLI:** cole o conteúdo de cada arquivo de [`drizzle/`](./drizzle) no SQL
+  Editor do Neon, **na ordem** (`0000_initial.sql`, depois `0001_terms_accepted.sql`).
 
 ### 1.4 (Opcional) Dados de demonstração
 
@@ -86,6 +86,9 @@ Sem conta ainda? `/cadastro` cria a loja e o usuário proprietário em um passo.
 | `/vitrine` | Vitrine | Configuração da landing page: link, logo, hero, textos, paleta e contato. |
 | `/usuarios` | Equipe | Membros, papéis, redefinição de senha. |
 | `/loja/[slug]` | Pública | Landing page gerada automaticamente a partir do estoque. |
+| `/ajuda` | Pública | Central de ajuda: primeiros passos, guia dos módulos, permissões e FAQ. |
+| `/termos` | Pública | Termos de Uso. |
+| `/privacidade` | Pública | Política de Privacidade (LGPD). |
 
 ### Papéis e permissões
 
@@ -164,7 +167,41 @@ Convenções:
 
 ---
 
-## 6. Identidade visual
+## 6. Documentos legais e ajuda
+
+Três páginas públicas completam o produto:
+
+| Página | Conteúdo |
+| --- | --- |
+| `/termos` | Termos de Uso: conta, uso aceitável, titularidade dos dados, disponibilidade e limitação de responsabilidade. |
+| `/privacidade` | Política de Privacidade alinhada à LGPD: papéis de controlador e operador, cookies, subprocessadores, retenção e direitos do titular. |
+| `/ajuda` | Central de ajuda: primeiros passos, guia de cada módulo, tabela de permissões por papel e perguntas frequentes. |
+
+Ficam no grupo de rotas `(public)` e compartilham o mesmo cabeçalho e rodapé
+([`site-footer.tsx`](./src/components/site-footer.tsx)).
+
+### Preencha antes de publicar
+
+Os dados do fornecedor estão em **um único lugar**:
+[`src/lib/legal.ts`](./src/lib/legal.ts). Substitua os campos entre colchetes
+(razão social, CNPJ, endereço, e-mails de contato e do encarregado de dados e
+site) — eles aparecem automaticamente nos dois documentos.
+
+> Os textos foram redigidos como base técnica e cobrem os pontos que a LGPD e a
+> prática de SaaS exigem, mas **não substituem revisão jurídica**. Peça a um
+> advogado para validar cláusulas de responsabilidade e foro antes de tratar o
+> documento como contrato definitivo.
+
+### Registro do aceite
+
+O cadastro em `/cadastro` exige marcar o aceite dos Termos e da Política, com
+links para os dois documentos. O servidor valida o aceite (`registerSchema`) e
+grava `users.terms_accepted_at`, que serve como prova de quando cada usuário
+concordou.
+
+---
+
+## 7. Identidade visual
 
 A marca do Store77 fica em [`public/`](./public):
 
@@ -172,6 +209,7 @@ A marca do Store77 fica em [`public/`](./public):
 | --- | --- |
 | `logoname.png` | Logotipo horizontal com o nome — cabeçalho do app, login e landing ([`src/components/brand.tsx`](./src/components/brand.tsx)). |
 | `logo.png` | Símbolo (sacola) isolado — avatar, redes sociais, ícone. |
+| `logoDev.png` | Marca da AUTORIC, usada no rodapé das páginas públicas e no fim do menu lateral. |
 | `favicon_io/` | Pacote completo de favicons, declarado no [`src/app/layout.tsx`](./src/app/layout.tsx) e no `site.webmanifest`. |
 
 Use o componente `Brand` em vez de repetir o `<Image>` — assim trocar a arte
@@ -190,7 +228,7 @@ landing page do cliente final.
 
 ---
 
-## 7. Decisões e próximos passos
+## 8. Decisões e próximos passos
 
 **Decisões**
 
