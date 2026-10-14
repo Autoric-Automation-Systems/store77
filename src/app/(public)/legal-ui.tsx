@@ -58,30 +58,23 @@ export function Bullets({ items }: { items: ReactNode[] }) {
 }
 
 export function ContactBlock() {
+  const rows = [
+    { label: "Razão social", value: COMPANY.legalName },
+    { label: "CNPJ", value: COMPANY.cnpj },
+    { label: "Endereço", value: COMPANY.address },
+    { label: "Contato", value: COMPANY.contactEmail },
+    { label: "Encarregado de dados", value: COMPANY.privacyEmail },
+    { label: "Site", value: COMPANY.site },
+  ].filter((row) => Boolean(row.value));
+
   return (
     <dl className="mt-3 grid gap-2 text-sm text-ink-600">
-      <div className="flex gap-2">
-        <dt className="w-40 shrink-0 font-medium text-ink-700">Razão social</dt>
-        <dd>{COMPANY.legalName}</dd>
-      </div>
-      <div className="flex gap-2">
-        <dt className="w-40 shrink-0 font-medium text-ink-700">CNPJ</dt>
-        <dd>{COMPANY.cnpj}</dd>
-      </div>
-      <div className="flex gap-2">
-        <dt className="w-40 shrink-0 font-medium text-ink-700">Endereço</dt>
-        <dd>{COMPANY.address}</dd>
-      </div>
-      <div className="flex gap-2">
-        <dt className="w-40 shrink-0 font-medium text-ink-700">Contato</dt>
-        <dd>{COMPANY.contactEmail}</dd>
-      </div>
-      <div className="flex gap-2">
-        <dt className="w-40 shrink-0 font-medium text-ink-700">
-          Encarregado de dados
-        </dt>
-        <dd>{COMPANY.privacyEmail}</dd>
-      </div>
+      {rows.map((row) => (
+        <div key={row.label} className="flex gap-2">
+          <dt className="w-40 shrink-0 font-medium text-ink-700">{row.label}</dt>
+          <dd>{row.value}</dd>
+        </div>
+      ))}
     </dl>
   );
 }

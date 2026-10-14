@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Bullets, ContactBlock, LegalPage, Section } from "../legal-ui";
-import { COMPANY, LEGAL_UPDATED_AT, PRODUCT, SUBPROCESSORS } from "@/lib/legal";
+import {
+  COMPANY,
+  LEGAL_UPDATED_AT,
+  PRIVACY_CONTACT,
+  PRODUCT,
+  SUBPROCESSORS,
+} from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Política de Privacidade",
@@ -210,7 +216,7 @@ export default function PrivacidadePage() {
         </p>
         <p>
           Para os demais pedidos, escreva para{" "}
-          <strong>{COMPANY.privacyEmail}</strong>. Se você é cliente de uma loja,
+          <strong>{PRIVACY_CONTACT}</strong>. Se você é cliente de uma loja,
           dirija-se primeiro à loja, que é a controladora dos seus dados — nós
           ajudamos a loja a atender o pedido.
         </p>
@@ -236,8 +242,13 @@ export default function PrivacidadePage() {
       <Section id="contato" title="12. Contato">
         <p>
           Dúvidas sobre privacidade ou pedidos de titular:{" "}
-          <strong>{COMPANY.privacyEmail}</strong>. Assuntos gerais:{" "}
-          <strong>{COMPANY.contactEmail}</strong>.
+          <strong>{PRIVACY_CONTACT}</strong>.
+          {COMPANY.privacyEmail ? (
+            <>
+              {" "}
+              Assuntos gerais: <strong>{COMPANY.contactEmail}</strong>.
+            </>
+          ) : null}
         </p>
         <p>
           Veja também os{" "}

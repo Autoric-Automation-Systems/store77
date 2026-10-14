@@ -227,8 +227,15 @@ export default function TermosPage() {
 
       <Section id="contato" title="15. Contato">
         <p>
-          Dúvidas sobre estes Termos: <strong>{COMPANY.contactEmail}</strong>. Para
-          questões de privacidade: <strong>{COMPANY.privacyEmail}</strong>.
+          Dúvidas sobre estes Termos: <strong>{COMPANY.contactEmail}</strong>
+          {COMPANY.privacyEmail ? (
+            <>
+              . Para questões de privacidade:{" "}
+              <strong>{COMPANY.privacyEmail}</strong>.
+            </>
+          ) : (
+            "."
+          )}
         </p>
       </Section>
     </LegalPage>

@@ -1,21 +1,26 @@
 /**
  * Dados jurídicos do fornecedor do Store77.
  *
- * TODO(preencher): os campos marcados com colchetes precisam ser substituídos
- * antes de publicar. A Política de Privacidade e os Termos de Uso exibem o
- * conteúdo deste arquivo, então não há outro lugar para editar.
- *
- * Este documento foi redigido como base técnica e precisa de revisão jurídica
- * antes de ser tratado como contrato definitivo.
+ * A Política de Privacidade e os Termos de Uso leem daqui — este é o único
+ * lugar para editar. Campos deixados como `null` simplesmente não aparecem na
+ * página, em vez de exibir um marcador.
  */
 export const COMPANY = {
-  legalName: "[RAZÃO SOCIAL — ex.: Autoric Automação e Sistemas LTDA]",
-  cnpj: "[CNPJ]",
-  address: "[ENDEREÇO COMPLETO — cidade/UF]",
-  contactEmail: "[E-MAIL DE CONTATO]",
-  privacyEmail: "[E-MAIL DO ENCARREGADO (DPO)]",
-  site: "[SITE — ex.: https://autoric.com.br]",
+  legalName: "Autoric Automação e Sistemas",
+  cnpj: "33.019.320/0001-42",
+  contactEmail: "autoricbr@gmail.com",
+  site: "https://autoric.com.br",
+  // Ainda não definidos — ficam ocultos até serem preenchidos.
+  address: null as string | null,
+  privacyEmail: null as string | null,
 } as const;
+
+/**
+ * Canal para pedidos de titular de dados (LGPD). Sem um encarregado dedicado, o
+ * contato geral já atende.
+ */
+export const PRIVACY_CONTACT: string =
+  COMPANY.privacyEmail ?? COMPANY.contactEmail;
 
 export const PRODUCT = {
   name: "Store77",

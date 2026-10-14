@@ -367,14 +367,16 @@ export default function AjudaPage() {
             Não encontrou a resposta?
           </h2>
           <p className="mt-2 text-sm text-ink-600">
-            Fale com o suporte em{" "}
-            <strong>{COMPANY.contactEmail}</strong>. Para agilizar, informe o nome
-            da loja, o módulo e o que você esperava que acontecesse.
+            Fale com o suporte em <strong>{COMPANY.contactEmail}</strong>. Para
+            agilizar, informe o nome da loja, o módulo e o que você esperava que
+            acontecesse.
           </p>
-          <p className="mt-3 text-sm text-ink-600">
-            Para assuntos de dados pessoais, use{" "}
-            <strong>{COMPANY.privacyEmail}</strong>.
-          </p>
+          {COMPANY.privacyEmail ? (
+            <p className="mt-3 text-sm text-ink-600">
+              Para assuntos de dados pessoais, use{" "}
+              <strong>{COMPANY.privacyEmail}</strong>.
+            </p>
+          ) : null}
           <div className="mt-5 flex flex-wrap gap-3">
             <Link href="/termos" className="btn btn-secondary">
               Termos de Uso
