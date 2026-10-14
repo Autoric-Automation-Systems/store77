@@ -139,7 +139,7 @@ export default async function ProdutoPage({
         {isAdmin ? <ProductActions productId={product.id} /> : null}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Saldo atual" value={`${product.quantity} ${product.unit}`} />
         <Stat label="Preço de venda" value={formatBRL(product.priceCents)} />
         <Stat label="Custo" value={formatBRL(product.costCents)} />
@@ -228,7 +228,7 @@ export default async function ProdutoPage({
             ) : (
               <ul className="divide-y divide-ink-100">
                 {movements.map((movement) => (
-                  <li key={movement.id} className="flex items-start gap-3 px-5 py-3">
+                  <li key={movement.id} className="flex items-start gap-3 px-3 py-3 sm:px-5">
                     <Package className="mt-0.5 size-4 text-ink-400" />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">

@@ -130,7 +130,7 @@ export default async function DashboardPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat
           label="Vendas de hoje"
           value={formatBRL(today.total)}
@@ -173,7 +173,7 @@ export default async function DashboardPage() {
               {lowStock.map((product) => (
                 <li
                   key={product.id}
-                  className="flex items-center justify-between gap-4 px-5 py-3"
+                  className="flex items-center justify-between gap-4 px-3 py-3 sm:px-5"
                 >
                   <div className="min-w-0">
                     <Link
@@ -253,7 +253,7 @@ export default async function DashboardPage() {
                 {recentMovements.map((movement) => (
                   <li
                     key={movement.id}
-                    className="flex items-center justify-between gap-4 px-5 py-3"
+                    className="flex items-center justify-between gap-4 px-3 py-3 sm:px-5"
                   >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-ink-900">

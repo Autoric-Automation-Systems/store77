@@ -194,7 +194,7 @@ export default async function FinanceiroPage({
         <Alert tone="warning">Lançamento não encontrado.</Alert>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat
           label="A receber (pendente)"
           value={formatBRL(toReceive)}
@@ -222,7 +222,7 @@ export default async function FinanceiroPage({
 
       <div
         className={
-          isAdmin ? "grid items-start gap-6 lg:grid-cols-[1fr_360px]" : "space-y-6"
+          isAdmin ? "grid items-start gap-6 xl:grid-cols-[1fr_360px]" : "space-y-6"
         }
       >
         <div className="space-y-6">
@@ -294,13 +294,17 @@ export default async function FinanceiroPage({
                 <table className="min-w-full divide-y divide-ink-200 text-sm">
                   <thead className="table-head">
                     <tr>
-                      <th className="px-5 py-3">Vencimento</th>
-                      <th className="px-5 py-3">Descrição</th>
-                      <th className="px-5 py-3">Categoria</th>
-                      <th className="px-5 py-3">Tipo</th>
-                      <th className="px-5 py-3 text-right">Valor</th>
-                      <th className="px-5 py-3">Status</th>
-                      <th className="px-5 py-3" />
+                      <th className="px-3 py-3 sm:px-5">Vencimento</th>
+                      <th className="px-3 py-3 sm:px-5">Descrição</th>
+                      <th className="hidden px-3 py-3 lg:table-cell lg:px-5">
+                        Categoria
+                      </th>
+                      <th className="hidden px-3 py-3 lg:table-cell lg:px-5">Tipo</th>
+                      <th className="px-3 py-3 text-right sm:px-5">Valor</th>
+                      <th className="hidden px-3 py-3 lg:table-cell lg:px-5">
+                        Status
+                      </th>
+                      <th className="px-3 py-3 sm:px-5" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-ink-100">
@@ -309,21 +313,29 @@ export default async function FinanceiroPage({
                         entry.status === "PENDENTE" && entry.dueDate < today;
                       return (
                         <tr key={entry.id} className="hover:bg-ink-50">
-                          <td className="whitespace-nowrap px-5 py-3 text-ink-600">
+                          <td className="hidden whitespace-nowrap px-3 py-3 text-ink-600 sm:table-cell sm:px-5">
                             {formatDate(entry.dueDate)}
                           </td>
-                          <td className="px-5 py-3">
+                          <td className="px-3 py-3 sm:px-5">
                             <p className="font-medium text-ink-900">
                               {entry.description}
                             </p>
                             {entry.notes ? (
                               <p className="text-xs text-ink-500">{entry.notes}</p>
                             ) : null}
+                            {/* No celular as colunas de vencimento, tipo e status
+                                saem; o essencial delas cabe aqui embaixo. */}
+                            <p className="mt-0.5 text-xs text-ink-500 sm:hidden">
+                              {formatDate(entry.dueDate)} ·{" "}
+                              {entry.kind === "RECEBER" ? "A receber" : "A pagar"} ·{" "}
+                              {STATUS_LABELS[entry.status]}
+                              {overdue ? " · Vencido" : ""}
+                            </p>
                           </td>
-                          <td className="px-5 py-3 text-ink-600">
+                          <td className="hidden px-3 py-3 text-ink-600 lg:table-cell lg:px-5">
                             {entry.category ?? "—"}
                           </td>
-                          <td className="px-5 py-3">
+                          <td className="hidden px-3 py-3 sm:table-cell sm:px-5">
                             <Badge
                               tone={entry.kind === "RECEBER" ? "success" : "danger"}
                             >
@@ -331,7 +343,7 @@ export default async function FinanceiroPage({
                             </Badge>
                           </td>
                           <td
-                            className={`whitespace-nowrap px-5 py-3 text-right font-semibold ${
+                            className={`whitespace-nowrap px-3 py-3 sm:px-5 text-right font-semibold ${
                               entry.kind === "RECEBER"
                                 ? "text-emerald-700"
                                 : "text-red-700"
@@ -339,7 +351,7 @@ export default async function FinanceiroPage({
                           >
                             {formatBRL(entry.amountCents)}
                           </td>
-                          <td className="px-5 py-3">
+                          <td className="hidden px-3 py-3 sm:table-cell sm:px-5">
                             <div className="flex flex-wrap items-center gap-1">
                               <Badge tone={STATUS_TONES[entry.status]}>
                                 {STATUS_LABELS[entry.status]}
@@ -347,7 +359,7 @@ export default async function FinanceiroPage({
                               {overdue ? <Badge tone="warning">Vencido</Badge> : null}
                             </div>
                           </td>
-                          <td className="px-5 py-3">
+                          <td className="px-3 py-3 sm:px-5">
                             {isAdmin ? (
                               <EntryActions
                                 entryId={entry.id}

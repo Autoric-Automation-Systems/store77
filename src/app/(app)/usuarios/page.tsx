@@ -81,13 +81,13 @@ export default async function UsuariosPage({
         description="Acessos da loja, papéis e senhas. Somente o proprietário deixa a loja sem administrador."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <Stat label="Membros ativos" value={String(stats.activeTotal)} />
         <Stat label="Equipe (owner, gerente e vendedor)" value={String(stats.activeTeam)} />
         <Stat label="Clientes" value={String(stats.activeClients)} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <Card className="h-fit">
           <CardHeader
             title="Membros"
@@ -97,11 +97,13 @@ export default async function UsuariosPage({
             <table className="min-w-full divide-y divide-ink-200 text-sm">
               <thead className="table-head">
                 <tr>
-                  <th className="px-5 py-3">Membro</th>
-                  <th className="px-5 py-3">Papel</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Criado em</th>
-                  <th className="px-5 py-3 text-right">Ações</th>
+                  <th className="px-3 py-3 sm:px-5">Membro</th>
+                  <th className="hidden px-3 py-3 sm:table-cell sm:px-5">Papel</th>
+                  <th className="hidden px-3 py-3 sm:table-cell sm:px-5">Status</th>
+                  <th className="hidden px-3 py-3 2xl:table-cell 2xl:px-5">
+                    Criado em
+                  </th>
+                  <th className="px-3 py-3 text-right sm:px-5">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
@@ -111,7 +113,7 @@ export default async function UsuariosPage({
 
                   return (
                     <tr key={row.id} className="hover:bg-ink-50">
-                      <td className="px-5 py-3">
+                      <td className="px-3 py-3 sm:px-5">
                         <p className="font-semibold text-ink-900">
                           {row.name}
                           {isSelf ? (
@@ -120,27 +122,39 @@ export default async function UsuariosPage({
                             </span>
                           ) : null}
                         </p>
-                        <p className="text-xs text-ink-500">{row.email}</p>
+                        <p className="break-all text-xs text-ink-500">{row.email}</p>
                         {row.phone ? (
-                          <p className="text-xs text-ink-500">{row.phone}</p>
+                          <p className="break-all text-xs text-ink-500">{row.phone}</p>
                         ) : null}
+                        {/* No celular, papel e status descem para cá em vez de
+                            ocupar duas colunas próprias. */}
+                        <div className="mt-1 flex flex-wrap items-center gap-1 sm:hidden">
+                          <Badge tone={ROLE_TONES[row.role]}>
+                            {ROLE_LABELS[row.role]}
+                          </Badge>
+                          {row.active ? (
+                            <Badge tone="success">Ativo</Badge>
+                          ) : (
+                            <Badge tone="neutral">Inativo</Badge>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="hidden px-3 py-3 sm:table-cell sm:px-5">
                         <Badge tone={ROLE_TONES[row.role]}>
                           {ROLE_LABELS[row.role]}
                         </Badge>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="hidden px-3 py-3 sm:table-cell sm:px-5">
                         {row.active ? (
                           <Badge tone="success">Ativo</Badge>
                         ) : (
                           <Badge tone="neutral">Inativo</Badge>
                         )}
                       </td>
-                      <td className="px-5 py-3 text-ink-600">
+                      <td className="hidden px-3 py-3 text-ink-600 2xl:table-cell 2xl:px-5">
                         {formatDateTime(row.createdAt)}
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-3 py-3 sm:px-5">
                         <MemberActions
                           member={{
                             id: row.id,
@@ -157,7 +171,7 @@ export default async function UsuariosPage({
               </tbody>
             </table>
           </div>
-          <div className="border-t border-ink-200 px-5 py-3 text-right">
+          <div className="border-t border-ink-200 px-3 py-3 sm:px-5 text-right">
             <Link
               href={`/usuarios?edit=${user.id}`}
               className="text-xs font-semibold text-brand-600"

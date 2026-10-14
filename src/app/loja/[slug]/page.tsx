@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { headers } from "next/headers";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import { MapPin, MessageCircle, Package, Phone } from "lucide-react";
@@ -14,6 +15,7 @@ import {
 } from "@/db/schema";
 import { toAbsoluteUrl } from "@/lib/blob";
 import { formatBRL } from "@/lib/format";
+import { COMPANY, PRODUCT } from "@/lib/legal";
 import { hexToRgbChannels } from "@/lib/slug";
 
 export const dynamic = "force-dynamic";
@@ -393,37 +395,77 @@ export default async function PublicStorePage({
         ) : null}
       </main>
 
-      <footer
-        className="mt-6 text-white"
-        style={{ backgroundColor: store.secondaryColor }}
-      >
-        <div className="mx-auto grid max-w-6xl gap-6 px-5 py-10 sm:grid-cols-3">
-          <div>
-            <p className="font-bold">{store.name}</p>
-            {store.address ? (
-              <p className="mt-2 flex items-start gap-2 text-sm text-white/70">
-                <MapPin className="mt-0.5 size-4 shrink-0" />
-                {store.address}
-              </p>
-            ) : null}
+      <footer className="mt-6">
+        <div className="text-white" style={{ backgroundColor: store.secondaryColor }}>
+          <div className="mx-auto grid max-w-6xl gap-6 px-5 py-10 sm:grid-cols-3">
+            <div>
+              <p className="font-bold">{store.name}</p>
+              {store.address ? (
+                <p className="mt-2 flex items-start gap-2 text-sm text-white/70">
+                  <MapPin className="mt-0.5 size-4 shrink-0" />
+                  {store.address}
+                </p>
+              ) : null}
+            </div>
+            <div className="space-y-2 text-sm text-white/70">
+              {store.phone ? (
+                <p className="flex items-center gap-2">
+                  <Phone className="size-4" />
+                  {store.phone}
+                </p>
+              ) : null}
+              {store.email ? (
+                <p className="flex items-center gap-2">
+                  <MessageCircle className="size-4" />
+                  {store.email}
+                </p>
+              ) : null}
+            </div>
+            <p className="text-sm text-white/50 sm:text-right">
+              Catálogo atualizado automaticamente pelo estoque da loja.
+            </p>
           </div>
-          <div className="space-y-2 text-sm text-white/70">
-            {store.phone ? (
-              <p className="flex items-center gap-2">
-                <Phone className="size-4" />
-                {store.phone}
-              </p>
-            ) : null}
-            {store.email ? (
-              <p className="flex items-center gap-2">
-                <MessageCircle className="size-4" />
-                {store.email}
-              </p>
-            ) : null}
+        </div>
+
+        {/*
+          Créditos em faixa clara: o logotipo do Store77 é escuro e o da AUTORIC
+          é azul, então nenhum dos dois tem contraste sobre o rodapé colorido
+          da loja.
+        */}
+        <div className="border-t border-ink-200 bg-white">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 py-4 text-xs text-ink-500 sm:flex-row">
+            <Link
+              href={PRODUCT.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 transition hover:text-ink-800"
+            >
+              <Image
+                src="/logoname.png"
+                alt="Store77"
+                width={669}
+                height={373}
+                className="h-4 w-auto"
+              />
+              <span>Loja criada com Store77</span>
+            </Link>
+
+            <Link
+              href={COMPANY.site}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 transition hover:text-ink-800"
+            >
+              <span>Desenvolvido por</span>
+              <Image
+                src="/logoDev.png"
+                alt="AUTORIC — Automação e Sistemas"
+                width={1160}
+                height={323}
+                className="h-4 w-auto"
+              />
+            </Link>
           </div>
-          <p className="text-sm text-white/50 sm:text-right">
-            Catálogo atualizado automaticamente pelo estoque da loja.
-          </p>
         </div>
       </footer>
     </div>

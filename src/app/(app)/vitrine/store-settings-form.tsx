@@ -238,11 +238,12 @@ export function StoreSettingsForm({
             label="WhatsApp"
             name="whatsapp"
             error={state.fieldErrors?.whatsapp}
-            hint="Somente números com DDI. Ex.: 5511999999999"
+            hint="Só números, com o código do país na frente: 55 (Brasil) + DDD + número. Ex.: 5511999999999. É esse número que recebe os pedidos da vitrine, então confira antes de salvar."
           >
             <input
               id="whatsapp"
               name="whatsapp"
+              inputMode="tel"
               className="input"
               defaultValue={store.whatsapp ?? ""}
               placeholder="5511999999999"

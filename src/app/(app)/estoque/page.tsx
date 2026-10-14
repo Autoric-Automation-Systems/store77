@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { and, asc, eq, ilike, or, sql, type SQL } from "drizzle-orm";
-import { Plus, Search } from "lucide-react";
+import { ArrowLeftRight, Plus, Search } from "lucide-react";
 import { db } from "@/db";
 import { categories, products } from "@/db/schema";
 import { isAdminRole, requireUser } from "@/lib/auth";
@@ -109,7 +109,7 @@ export default async function EstoquePage({
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Produtos ativos" value={String(stats.total)} />
         <Stat label="Itens em estoque" value={String(stats.units)} />
         <Stat label="Valor a preço de venda" value={formatBRL(Number(stats.stockValue))} />
@@ -192,12 +192,14 @@ export default async function EstoquePage({
             <table className="min-w-full divide-y divide-ink-200 text-sm">
               <thead className="table-head">
                 <tr>
-                  <th className="px-5 py-3">Produto</th>
-                  <th className="px-5 py-3">Tipo</th>
-                  <th className="px-5 py-3">Local</th>
-                  <th className="px-5 py-3 text-right">Preço</th>
-                  <th className="px-5 py-3 text-right">Saldo</th>
-                  <th className="px-5 py-3" />
+                  <th className="px-3 py-3 sm:px-5">Produto</th>
+                  <th className="hidden px-3 py-3 sm:table-cell sm:px-5">Tipo</th>
+                  <th className="hidden px-3 py-3 lg:table-cell lg:px-5">Local</th>
+                  <th className="hidden px-3 py-3 text-right sm:table-cell sm:px-5">
+                    Preço
+                  </th>
+                  <th className="px-3 py-3 sm:px-5 text-right">Saldo</th>
+                  <th className="px-3 py-3 sm:px-5" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
@@ -206,7 +208,7 @@ export default async function EstoquePage({
                   const out = row.quantity === 0;
                   return (
                     <tr key={row.id} className="hover:bg-ink-50">
-                      <td className="px-5 py-3">
+                      <td className="px-3 py-3 sm:px-5">
                         <Link
                           href={`/estoque/${row.id}`}
                           className="font-semibold text-ink-900 hover:text-brand-700"
@@ -215,16 +217,16 @@ export default async function EstoquePage({
                         </Link>
                         <p className="text-xs text-ink-500">{row.code}</p>
                       </td>
-                      <td className="px-5 py-3 text-ink-600">
+                      <td className="hidden px-3 py-3 text-ink-600 sm:table-cell sm:px-5">
                         {row.categoryName ?? "—"}
                       </td>
-                      <td className="px-5 py-3 text-ink-600">
+                      <td className="hidden px-3 py-3 text-ink-600 lg:table-cell lg:px-5">
                         {row.location ?? "—"}
                       </td>
-                      <td className="px-5 py-3 text-right font-medium">
+                      <td className="hidden px-3 py-3 text-right font-medium sm:table-cell sm:px-5">
                         {formatBRL(row.priceCents)}
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="px-3 py-3 sm:px-5 text-right">
                         {out ? (
                           <Badge tone="danger">Sem estoque</Badge>
                         ) : low ? (
@@ -237,12 +239,17 @@ export default async function EstoquePage({
                           </span>
                         )}
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="px-3 py-3 text-right sm:px-5">
                         <Link
                           href={`/estoque/movimentacoes?produto=${row.id}`}
                           className="text-xs font-semibold text-brand-600"
+                          aria-label={`Movimentar ${row.name}`}
+                          title={`Movimentar ${row.name}`}
                         >
-                          Movimentar
+                          {/* Em telas muito estreitas o rótulo não cabe; o ícone
+                              mantém a ação acessível sem alargar a tabela. */}
+                          <ArrowLeftRight className="size-4 sm:hidden" />
+                          <span className="hidden sm:inline">Movimentar</span>
                         </Link>
                       </td>
                     </tr>

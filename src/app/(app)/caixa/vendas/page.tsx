@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { customers, saleItems, sales, users } from "@/db/schema";
 import { cancelSaleAction } from "@/app/actions/sales";
 import { isAdminRole, requireUser } from "@/lib/auth";
-import { formatBRL, formatDateTime } from "@/lib/format";
+import { formatBRL, formatDateTime, formatDateTimeShort } from "@/lib/format";
 import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 
@@ -107,20 +107,24 @@ export default async function VendasPage({
             <table className="min-w-full divide-y divide-ink-200 text-sm">
               <thead className="table-head">
                 <tr>
-                  <th className="px-5 py-3">Venda</th>
-                  <th className="px-5 py-3">Cliente</th>
-                  <th className="px-5 py-3">Vendedor</th>
-                  <th className="px-5 py-3 text-right">Itens</th>
-                  <th className="px-5 py-3 text-right">Total</th>
-                  <th className="px-5 py-3">Pagamento</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3" />
+                  <th className="px-3 py-3 sm:px-5">Venda</th>
+                  <th className="hidden px-3 py-3 lg:table-cell lg:px-5">Cliente</th>
+                  <th className="hidden px-3 py-3 lg:table-cell lg:px-5">Vendedor</th>
+                  <th className="hidden px-3 py-3 text-right lg:table-cell lg:px-5">
+                    Itens
+                  </th>
+                  <th className="px-3 py-3 text-right sm:px-5">Total</th>
+                  <th className="hidden px-3 py-3 lg:table-cell lg:px-5">
+                    Pagamento
+                  </th>
+                  <th className="hidden px-3 py-3 sm:table-cell sm:px-5">Status</th>
+                  <th className="px-3 py-3 sm:px-5" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
                 {rows.map((sale) => (
                   <tr key={sale.id} className="hover:bg-ink-50">
-                    <td className="whitespace-nowrap px-5 py-3">
+                    <td className="whitespace-nowrap px-3 py-3 sm:px-5">
                       <Link
                         href={`/caixa/vendas/${sale.id}`}
                         className="font-semibold text-brand-700 hover:underline"
@@ -128,32 +132,37 @@ export default async function VendasPage({
                         #{sale.number}
                       </Link>
                       <span className="block text-xs text-ink-500">
-                        {formatDateTime(sale.createdAt)}
+                        <span className="sm:hidden">
+                          {formatDateTimeShort(sale.createdAt)}
+                        </span>
+                        <span className="hidden sm:inline">
+                          {formatDateTime(sale.createdAt)}
+                        </span>
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-ink-700">
+                    <td className="hidden px-3 py-3 text-ink-700 lg:table-cell lg:px-5">
                       {sale.customerName ?? "Consumidor final"}
                     </td>
-                    <td className="px-5 py-3 text-ink-500">
+                    <td className="hidden px-3 py-3 text-ink-500 lg:table-cell lg:px-5">
                       {sale.sellerName ?? "—"}
                     </td>
-                    <td className="px-5 py-3 text-right text-ink-600">
+                    <td className="hidden px-3 py-3 text-right text-ink-600 lg:table-cell lg:px-5">
                       {sale.itemCount}
                     </td>
-                    <td className="whitespace-nowrap px-5 py-3 text-right font-semibold">
+                    <td className="whitespace-nowrap px-3 py-3 text-right font-semibold sm:px-5">
                       {formatBRL(sale.totalCents)}
                     </td>
-                    <td className="px-5 py-3 text-ink-500">
+                    <td className="hidden px-3 py-3 text-ink-500 lg:table-cell lg:px-5">
                       {sale.paymentMethod
                         ? PAYMENT_LABELS[sale.paymentMethod]
                         : "—"}
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="hidden px-3 py-3 sm:table-cell sm:px-5">
                       <Badge tone={STATUS_TONES[sale.status]}>
                         {STATUS_LABELS[sale.status]}
                       </Badge>
                     </td>
-                    <td className="whitespace-nowrap px-5 py-3 text-right">
+                    <td className="whitespace-nowrap px-3 py-3 sm:px-5 text-right">
                       {isAdmin && sale.status === "PAGA" ? (
                         <form action={cancelSaleAction}>
                           <input type="hidden" name="id" value={sale.id} />

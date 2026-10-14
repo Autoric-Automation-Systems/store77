@@ -20,7 +20,7 @@ export function CardHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-ink-200 px-5 py-4 sm:px-6">
+    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-ink-200 px-3 py-4 sm:px-5 sm:px-6">
       <div>
         <h2 className="text-base font-semibold text-ink-900">{title}</h2>
         {description ? (
@@ -115,7 +115,7 @@ export function Stat({
       <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
         {label}
       </p>
-      <p className="mt-2 text-2xl font-bold text-ink-900">{value}</p>
+      <p className="mt-2 text-xl font-bold text-ink-900 sm:text-2xl">{value}</p>
       {hint ? (
         <p className="mt-1">
           <Badge tone={tone}>{hint}</Badge>

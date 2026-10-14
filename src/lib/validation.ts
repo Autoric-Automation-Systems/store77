@@ -19,6 +19,23 @@ export const moneySchema = z
   .union([z.string(), z.number()])
   .transform((value) => parseMoneyToCents(value as string | number));
 
+/**
+ * WhatsApp é usado para montar o link `wa.me`, que exige o número em formato
+ * internacional: código do país + DDD + número, só dígitos. Aceitamos a digitação
+ * com pontuação e limpamos aqui, mas o código do país precisa vir.
+ */
+export const whatsappSchema = z
+  .union([z.string(), z.literal("")])
+  .optional()
+  .transform((value) => {
+    const onlyDigits = (value ?? "").replace(/\D/g, "");
+    return onlyDigits.length > 0 ? onlyDigits : null;
+  })
+  .refine(
+    (value) => value === null || (value.length >= 12 && value.length <= 15),
+    "Inclua o código do país: para o Brasil, comece com 55 (ex.: 5511999999999)",
+  );
+
 export const optionalText = (max = 500) =>
   z
     .string()
@@ -112,7 +129,7 @@ export const storeSettingsSchema = z.object({
       (value) => value.length >= 3,
       "Use ao menos 3 letras ou números no link",
     ),
-  whatsapp: optionalText(40),
+  whatsapp: whatsappSchema,
   phone: optionalText(40),
   email: z
     .union([z.string().trim().email("E-mail inválido"), z.literal("")])

@@ -125,16 +125,16 @@ export default async function VendaPage({
             <table className="min-w-full divide-y divide-ink-200 text-sm">
               <thead className="table-head">
                 <tr>
-                  <th className="px-5 py-3">Produto</th>
-                  <th className="px-5 py-3 text-right">Qtd.</th>
-                  <th className="px-5 py-3 text-right">Preço</th>
-                  <th className="px-5 py-3 text-right">Total</th>
+                  <th className="px-3 py-3 sm:px-5">Produto</th>
+                  <th className="px-3 py-3 sm:px-5 text-right">Qtd.</th>
+                  <th className="px-3 py-3 sm:px-5 text-right">Preço</th>
+                  <th className="px-3 py-3 sm:px-5 text-right">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
                 {items.map((item) => (
                   <tr key={item.id}>
-                    <td className="px-5 py-3">
+                    <td className="px-3 py-3 sm:px-5">
                       <span className="font-medium text-ink-900">
                         {item.name}
                       </span>
@@ -142,11 +142,11 @@ export default async function VendaPage({
                         {item.code}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-right">{item.quantity}</td>
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-3 py-3 sm:px-5 text-right">{item.quantity}</td>
+                    <td className="px-3 py-3 sm:px-5 text-right">
                       {formatBRL(item.unitPriceCents)}
                     </td>
-                    <td className="px-5 py-3 text-right font-semibold">
+                    <td className="px-3 py-3 sm:px-5 text-right font-semibold">
                       {formatBRL(item.totalCents)}
                     </td>
                   </tr>

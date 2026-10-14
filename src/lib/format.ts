@@ -40,6 +40,20 @@ export function formatDate(value: Date | string | null | undefined): string {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(date);
 }
 
+/** Versão curta para telas estreitas, onde a data completa ocupa colunas demais. */
+export function formatDateTimeShort(
+  value: Date | string | null | undefined,
+): string {
+  if (!value) return "-";
+  const date = typeof value === "string" ? new Date(value) : value;
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }

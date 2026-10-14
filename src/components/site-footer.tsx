@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { PRODUCT } from "@/lib/legal";
+import { COMPANY, PRODUCT } from "@/lib/legal";
 
 const LINKS = [
   { href: "/ajuda", label: "Ajuda" },
@@ -41,7 +41,7 @@ export function SiteFooter() {
             reservados.
           </p>
           <Link
-            href="https://github.com/Autoric-Automation-Systems"
+            href={COMPANY.site}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-2.5 text-xs text-ink-500 transition hover:text-ink-700"

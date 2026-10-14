@@ -38,7 +38,7 @@ export default async function CategoriasPage() {
         description="Agrupe o estoque por natureza do produto ou segmento e organize o carrossel da vitrine."
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <Card>
           <CardHeader
             title="Categorias cadastradas"
@@ -53,7 +53,7 @@ export default async function CategoriasPage() {
               {rows.map((row) => (
                 <li
                   key={row.id}
-                  className="flex items-center justify-between gap-4 px-5 py-3"
+                  className="flex items-center justify-between gap-4 px-3 py-3 sm:px-5"
                 >
                   <div className="min-w-0">
                     <p className="flex items-center gap-2 font-semibold text-ink-900">

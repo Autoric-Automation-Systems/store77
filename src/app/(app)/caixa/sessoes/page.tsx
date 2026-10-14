@@ -8,7 +8,7 @@ import {
   type CashMovement,
 } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
-import { formatBRL, formatDateTime } from "@/lib/format";
+import { formatBRL, formatDateTime, formatDateTimeShort } from "@/lib/format";
 import {
   Badge,
   Card,
@@ -187,7 +187,7 @@ export default async function SessoesCaixaPage() {
               action={<Badge tone="success">Aberta</Badge>}
             />
 
-            <div className="card-pad grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="card-pad grid grid-cols-2 gap-4 lg:grid-cols-3">
               <Stat
                 label="Fundo de troco"
                 value={formatBRL(openSession.openingAmountCents)}
@@ -221,7 +221,7 @@ export default async function SessoesCaixaPage() {
             </div>
 
             {openSession.notes ? (
-              <p className="border-t border-ink-200 px-5 py-3 text-sm text-ink-500 sm:px-6">
+              <p className="border-t border-ink-200 px-3 py-3 sm:px-5 text-sm text-ink-500 sm:px-6">
                 {openSession.notes}
               </p>
             ) : null}
@@ -243,24 +243,31 @@ export default async function SessoesCaixaPage() {
                   <table className="min-w-full divide-y divide-ink-200 text-sm">
                     <thead className="table-head">
                       <tr>
-                        <th className="px-5 py-3">Data</th>
-                        <th className="px-5 py-3">Tipo</th>
-                        <th className="px-5 py-3">Descrição</th>
-                        <th className="px-5 py-3 text-right">Valor</th>
+                        <th className="px-3 py-3 sm:px-5">Data</th>
+                        <th className="px-3 py-3 sm:px-5">Tipo</th>
+                        <th className="hidden px-3 py-3 sm:table-cell sm:px-5">
+                          Descrição
+                        </th>
+                        <th className="px-3 py-3 text-right sm:px-5">Valor</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-ink-100">
                       {openMovements.map((movement) => (
                         <tr key={movement.id} className="hover:bg-ink-50">
-                          <td className="whitespace-nowrap px-5 py-3 text-ink-500">
-                            {formatDateTime(movement.createdAt)}
+                          <td className="whitespace-nowrap px-3 py-3 text-ink-500 sm:px-5">
+                            <span className="sm:hidden">
+                              {formatDateTimeShort(movement.createdAt)}
+                            </span>
+                            <span className="hidden sm:inline">
+                              {formatDateTime(movement.createdAt)}
+                            </span>
                           </td>
-                          <td className="px-5 py-3">
+                          <td className="px-3 py-3 sm:px-5">
                             <Badge tone={MOVEMENT_TONES[movement.type]}>
                               {MOVEMENT_LABELS[movement.type]}
                             </Badge>
                           </td>
-                          <td className="px-5 py-3 text-ink-600">
+                          <td className="px-3 py-3 sm:px-5 text-ink-600">
                             {movement.description ?? "—"}
                             {movement.userName ? (
                               <span className="block text-xs text-ink-400">
@@ -268,7 +275,7 @@ export default async function SessoesCaixaPage() {
                               </span>
                             ) : null}
                           </td>
-                          <td className="px-5 py-3 text-right font-semibold">
+                          <td className="px-3 py-3 sm:px-5 text-right font-semibold">
                             {movement.type === "ENTRADA" ||
                             movement.type === "SUPRIMENTO"
                               ? "+"
@@ -290,7 +297,7 @@ export default async function SessoesCaixaPage() {
           </div>
         </>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
           <Card>
             <CardHeader
               title="Nenhuma sessão aberta"
@@ -317,13 +324,23 @@ export default async function SessoesCaixaPage() {
             <table className="min-w-full divide-y divide-ink-200 text-sm">
               <thead className="table-head">
                 <tr>
-                  <th className="px-5 py-3">Abertura</th>
-                  <th className="px-5 py-3">Fechamento</th>
-                  <th className="px-5 py-3">Operadores</th>
-                  <th className="px-5 py-3 text-right">Fundo</th>
-                  <th className="px-5 py-3 text-right">Contado</th>
-                  <th className="px-5 py-3 text-right">Esperado</th>
-                  <th className="px-5 py-3 text-right">Diferença</th>
+                  <th className="px-3 py-3 sm:px-5">Abertura</th>
+                  <th className="hidden px-3 py-3 sm:table-cell sm:px-5">
+                    Fechamento
+                  </th>
+                  <th className="hidden px-3 py-3 lg:table-cell lg:px-5">
+                    Operadores
+                  </th>
+                  <th className="hidden px-3 py-3 text-right sm:table-cell sm:px-5">
+                    Fundo
+                  </th>
+                  <th className="hidden px-3 py-3 text-right lg:table-cell lg:px-5">
+                    Contado
+                  </th>
+                  <th className="hidden px-3 py-3 text-right lg:table-cell lg:px-5">
+                    Esperado
+                  </th>
+                  <th className="px-3 py-3 text-right sm:px-5">Diferença</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
@@ -337,28 +354,33 @@ export default async function SessoesCaixaPage() {
 
                   return (
                     <tr key={session.id} className="hover:bg-ink-50">
-                      <td className="whitespace-nowrap px-5 py-3 text-ink-500">
-                        {formatDateTime(session.openedAt)}
+                      <td className="whitespace-nowrap px-3 py-3 text-ink-500 sm:px-5">
+                        <span className="sm:hidden">
+                          {formatDateTimeShort(session.openedAt)}
+                        </span>
+                        <span className="hidden sm:inline">
+                          {formatDateTime(session.openedAt)}
+                        </span>
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-ink-500">
+                      <td className="hidden whitespace-nowrap px-3 py-3 text-ink-500 sm:table-cell sm:px-5">
                         {formatDateTime(session.closedAt)}
                       </td>
-                      <td className="px-5 py-3 text-ink-600">
+                      <td className="hidden px-3 py-3 text-ink-600 lg:table-cell lg:px-5">
                         {session.openedByName ?? "—"}
                         <span className="block text-xs text-ink-400">
                           Encerrada por {session.closedByName ?? "—"}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="hidden px-3 py-3 text-right sm:table-cell sm:px-5">
                         {formatBRL(session.openingAmountCents)}
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="hidden px-3 py-3 text-right lg:table-cell lg:px-5">
                         {formatBRL(session.closingAmountCents)}
                       </td>
-                      <td className="px-5 py-3 text-right text-ink-600">
+                      <td className="hidden px-3 py-3 text-right text-ink-600 lg:table-cell lg:px-5">
                         {formatBRL(expected)}
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="px-3 py-3 text-right sm:px-5">
                         {difference === 0 ? (
                           <Badge tone="neutral">Sem diferença</Badge>
                         ) : (

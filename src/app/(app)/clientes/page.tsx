@@ -77,7 +77,7 @@ export default async function ClientesPage({
         description="Cadastro de clientes com histórico de compras registradas no PDV."
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <Card>
           <CardHeader
             title="Clientes cadastrados"
@@ -108,7 +108,7 @@ export default async function ClientesPage({
               {rows.map((customer) => (
                 <li
                   key={customer.id}
-                  className="flex flex-wrap items-center justify-between gap-4 px-5 py-3"
+                  className="flex flex-wrap items-center justify-between gap-4 px-3 py-3 sm:px-5"
                 >
                   <div className="min-w-0">
                     <p className="font-semibold text-ink-900">{customer.name}</p>

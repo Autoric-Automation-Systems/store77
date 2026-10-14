@@ -283,10 +283,9 @@ A cor da marca vive em [`src/app/globals.css`](./src/app/globals.css) (rampa
 cada loja* é separada e configurável por loja em `/vitrine` — é ela que colore a
 landing page do cliente final.
 
-> Os `logo.jpeg` / `logoname.jpeg` são masters em resolução maior (2528px) mas
-> **sem canal alfa**: trazem o xadrez de transparência gravado nos pixels, então
-> não servem para a interface. Os `.png` são os arquivos usados pelo app. Mantenha
-> os `.jpeg` como fonte para reexportar quando a arte mudar.
+> Os arquivos `.jpeg` de resolução maior foram removidos: vinham **sem canal
+> alfa**, com o xadrez de transparência gravado nos pixels, e somavam 4 MB sem
+> uso. Os `.png` ao lado são os arquivos que o app consome.
 
 ---
 

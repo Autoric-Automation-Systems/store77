@@ -2,7 +2,7 @@ import { and, asc, desc, eq, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { products, stockMovements, users } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatDateTimeShort } from "@/lib/format";
 import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
 import { MovementForm } from "./movement-form";
 
@@ -78,7 +78,7 @@ export default async function MovimentacoesPage({
         description="Entradas, saídas e ajustes com saldo resultante de cada lançamento."
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <Card>
           <CardHeader
             title="Histórico"
@@ -111,21 +111,28 @@ export default async function MovimentacoesPage({
               <table className="min-w-full divide-y divide-ink-200 text-sm">
                 <thead className="table-head">
                   <tr>
-                    <th className="px-5 py-3">Data</th>
-                    <th className="px-5 py-3">Produto</th>
-                    <th className="px-5 py-3">Tipo</th>
-                    <th className="px-5 py-3 text-right">Qtd.</th>
-                    <th className="px-5 py-3 text-right">Saldo</th>
-                    <th className="px-5 py-3">Motivo</th>
+                    <th className="px-3 py-3 sm:px-5">Data</th>
+                    <th className="px-3 py-3 sm:px-5">Produto</th>
+                    <th className="hidden px-3 py-3 sm:table-cell sm:px-5">Tipo</th>
+                    <th className="px-3 py-3 text-right sm:px-5">Qtd.</th>
+                    <th className="hidden px-3 py-3 text-right lg:table-cell lg:px-5">
+                      Saldo
+                    </th>
+                    <th className="hidden px-3 py-3 2xl:table-cell 2xl:px-5">Motivo</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-ink-100">
                   {movements.map((movement) => (
                     <tr key={movement.id} className="hover:bg-ink-50">
-                      <td className="whitespace-nowrap px-5 py-3 text-ink-500">
-                        {formatDateTime(movement.createdAt)}
+                      <td className="whitespace-nowrap px-3 py-3 text-ink-500 sm:px-5">
+                        <span className="sm:hidden">
+                          {formatDateTimeShort(movement.createdAt)}
+                        </span>
+                        <span className="hidden sm:inline">
+                          {formatDateTime(movement.createdAt)}
+                        </span>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-3 py-3 sm:px-5">
                         <span className="font-medium text-ink-900">
                           {movement.productName}
                         </span>
@@ -133,19 +140,19 @@ export default async function MovimentacoesPage({
                           {movement.productCode}
                         </span>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="hidden px-3 py-3 sm:table-cell sm:px-5">
                         <Badge tone={TONES[movement.type]}>
                           {LABELS[movement.type]}
                         </Badge>
                       </td>
-                      <td className="px-5 py-3 text-right font-semibold">
+                      <td className="px-3 py-3 text-right font-semibold sm:px-5">
                         {movement.type === "SAIDA" ? "-" : "+"}
                         {movement.quantity} {movement.unit}
                       </td>
-                      <td className="px-5 py-3 text-right text-ink-600">
+                      <td className="hidden px-3 py-3 text-right text-ink-600 lg:table-cell lg:px-5">
                         {movement.balanceAfter}
                       </td>
-                      <td className="px-5 py-3 text-ink-500">
+                      <td className="hidden px-3 py-3 text-ink-500 2xl:table-cell 2xl:px-5">
                         {movement.reason ?? movement.reference ?? "—"}
                         {movement.userEmail ? (
                           <span className="block text-xs text-ink-400">
