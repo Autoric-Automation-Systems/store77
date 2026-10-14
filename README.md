@@ -110,6 +110,30 @@ carrossel horizontal por tipo/nicho e seção "sobre". Os títulos de produto le
 direto para o WhatsApp da loja com a mensagem pronta. Nada é publicado à mão:
 produto sem estoque sai do ar sozinho (a menos que `showOutOfStock` esteja ligado).
 
+### Uma loja nova não precisa de deploy
+
+Este é o ponto central do modelo: **existe um único código e um único deploy
+para todas as lojas**. O arquivo da vitrine
+([`src/app/loja/[slug]/page.tsx`](./src/app/loja/%5Bslug%5D/page.tsx)) não tem
+nenhum dado de loja escrito nele — são só consultas ao banco. Quem define o que
+aparece é o `slug` da URL.
+
+Criar um cliente novo é inserir linhas, não publicar código:
+
+| Ação | O que acontece |
+| --- | --- |
+| Loja se cadastra em `/cadastro` (ou você insere em `stores`) | Ganha um `slug` e a página já existe em `/loja/<slug>` |
+| A loja configura `/vitrine` | Nome, logo, hero, paleta e contato passam a valer |
+| A loja cadastra produtos | Eles aparecem no carrossel da categoria correspondente |
+| Produto zera o estoque | Sai da vitrine automaticamente |
+
+Ou seja: 100 lojas usam o mesmo deploy. O isolamento vem do `store_id`, não de
+um ambiente por cliente. Deploy só acontece quando o **código** muda.
+
+Se um dia for necessário endereço próprio por cliente (`minhaloja.com.br`), a
+Vercel resolve isso por **domínio** apontando para o mesmo projeto, passando o
+domínio como parâmetro — continua sem deploy separado.
+
 ---
 
 ## 3. Modelo de dados
@@ -157,13 +181,17 @@ que um commit adicionar um arquivo em [`drizzle/`](./drizzle), rode
 Se a aplicação passar a ler ou gravar uma coluna que ainda não existe, a tela
 correspondente falha.
 
-**Deployment Protection bloqueia a vitrine.** Se a opção **Settings →
-Deployment Protection** estiver ligada, o domínio inteiro passa a exigir login na
-Vercel — inclusive `/loja/[slug]`, `/termos` e `/privacidade`. Como a vitrine
-existe para ser vista por clientes, mantenha a proteção apenas nos *preview
-deployments* e libere o domínio de produção. Para conferir:
-`curl -I https://seu-dominio.vercel.app` deve responder `200`, e não `302` para
-`vercel.com/login`.
+**Deployment Protection pode barrar visitantes (não é tarefa de deploy).** É uma
+configuração de acesso, em **Settings → Deployment Protection**. Quando ativa, o
+domínio passa a exigir login na Vercel — inclusive `/loja/[slug]`, `/termos` e
+`/privacidade`.
+
+O detalhe que engana: **quem tem acesso ao projeto na Vercel entra sem ver nada**,
+porque o Vercel Authentication reconhece a sessão. Por isso a proteção costuma
+passar despercebida para o dono e só aparecer para o cliente final. Teste em uma
+**janela anônima** (ou `curl -sI https://seu-dominio | head -3`): se vier `200`, a
+vitrine está pública e não há nada a fazer; se vier `302` para `vercel.com/sso-api`,
+desligue a proteção no domínio de produção e mantenha apenas nos *previews*.
 
 ---
 
