@@ -10,7 +10,7 @@ import {
   ShoppingCart,
   Users,
 } from "lucide-react";
-import { COMPANY, PRODUCT } from "@/lib/legal";
+import { COMPANY, PRODUCT, PRODUCT_HOST } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Ajuda",
@@ -44,8 +44,8 @@ const FIRST_STEPS = [
     cta: "Abrir Sessões de caixa",
   },
   {
-    title: "Publique a vitrine",
-    text: "Em Vitrine online, escolha o link, suba a logo, escreva o hero e defina a paleta. A página fica no ar com os produtos que têm estoque.",
+    title: "Configure a vitrine e divulgue",
+    text: "Em Vitrine online, escolha o link, suba a logo, escreva o hero e defina a paleta. A página já está no ar: basta compartilhar o endereço com seus clientes.",
     href: "/vitrine",
     cta: "Abrir Vitrine online",
   },
@@ -114,10 +114,12 @@ const MODULES = [
     title: "Vitrine online",
     body: [
       "Sua landing page é gerada automaticamente a partir do estoque. Você não publica produto por produto.",
-      "Configure link, logo, frase principal, texto de apoio, imagem de capa, paleta de cores e contato. O link fica em /loja/ seguido do endereço que você escolher e pode ser alterado depois.",
+      "A página existe desde o momento em que sua loja foi criada: basta cadastrar produtos e ela já está no ar. Não existe etapa técnica, aprovação ou instalação para a loja aparecer.",
+      `Configure link, logo, frase principal, texto de apoio, imagem de capa, paleta de cores e contato. Seu endereço fica assim: ${PRODUCT_HOST}/loja/seu-endereco — só a última parte muda, e você pode alterá-la depois.`,
       "Os produtos aparecem agrupados por tipo/nicho, em carrossel, com botão de pedido pelo WhatsApp já com a mensagem pronta.",
       "Produto sem estoque sai do ar sozinho. Se quiser exibi-lo marcado como indisponível, ligue “Mostrar produtos sem estoque”.",
       "Para despublicar temporariamente, desligue a opção de vitrine publicada — só você enxerga o conteúdo.",
+      "O endereço do link é a única coisa que você precisa divulgar. Ele funciona em qualquer celular ou computador, sem aplicativo.",
     ],
   },
   {
@@ -171,6 +173,18 @@ const FAQ = [
   {
     q: "Como funciona o desconto no PDV?",
     a: "O desconto é aplicado sobre o subtotal da venda e fica registrado no total. O sistema limita o desconto ao valor dos itens, então não é possível fechar uma venda com total negativo.",
+  },
+  {
+    q: "Preciso fazer algo técnico para minha loja ficar no ar?",
+    a: `Não. O ${PRODUCT.name} é um sistema único que atende todas as lojas: sua página existe desde o momento em que a loja foi criada. Cadastre os produtos e configure a vitrine — não há instalação, aprovação nem etapa técnica.`,
+  },
+  {
+    q: "Como meus clientes acessam a página da loja?",
+    a: `Pelo link que você define em Vitrine online: ${PRODUCT_HOST}/loja/ seguido do endereço escolhido. Funciona em qualquer celular ou computador, sem aplicativo. É só compartilhar esse link — no WhatsApp, no Instagram ou onde preferir.`,
+  },
+  {
+    q: "Cadastrei um produto. Quando ele aparece na vitrine?",
+    a: "Imediatamente. A vitrine lê o seu estoque em tempo real, então não há publicação separada: produto ativo com saldo aparece na hora e sai do ar sozinho quando zera.",
   },
   {
     q: "Consigo exportar meus dados?",

@@ -24,8 +24,12 @@ export const PRIVACY_CONTACT: string =
 
 export const PRODUCT = {
   name: "Store77",
+  url: "https://www.store77.com.br",
   tagline: "Gestão de estoque, caixa, financeiro e vitrine online para lojas",
 } as const;
+
+/** Domínio sem o esquema, para exibir em textos de ajuda. */
+export const PRODUCT_HOST = PRODUCT.url.replace(/^https?:\/\//, "");
 
 /** Data da última revisão exibida no topo dos documentos. */
 export const LEGAL_UPDATED_AT = "13 de outubro de 2026";
