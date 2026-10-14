@@ -149,6 +149,22 @@ Convenções:
    as variáveis de produção no `.env.local`, ou pela pipeline de CI).
 5. Deploy.
 
+### Dois detalhes que costumam pegar
+
+**Migrações não rodam sozinhas.** O deploy do Vercel não aplica migração. Sempre
+que um commit adicionar um arquivo em [`drizzle/`](./drizzle), rode
+`npm run db:migrate` ou cole o SQL no Neon **antes** (ou logo depois) do deploy.
+Se a aplicação passar a ler ou gravar uma coluna que ainda não existe, a tela
+correspondente falha.
+
+**Deployment Protection bloqueia a vitrine.** Se a opção **Settings →
+Deployment Protection** estiver ligada, o domínio inteiro passa a exigir login na
+Vercel — inclusive `/loja/[slug]`, `/termos` e `/privacidade`. Como a vitrine
+existe para ser vista por clientes, mantenha a proteção apenas nos *preview
+deployments* e libere o domínio de produção. Para conferir:
+`curl -I https://seu-dominio.vercel.app` deve responder `200`, e não `302` para
+`vercel.com/login`.
+
 ---
 
 ## 5. Comandos
