@@ -165,13 +165,31 @@ Convenções:
 ## 4. Deploy na Vercel
 
 1. Importe o repositório na Vercel (framework detectado automaticamente).
-2. Em **Storage**, crie um **Blob store** e conecte ao projeto — isso injeta
-   `BLOB_READ_WRITE_TOKEN`.
+2. Em **Storage**, crie um **Blob store** com acesso **public** e conecte ao
+   projeto — isso injeta `BLOB_READ_WRITE_TOKEN`.
 3. Em **Settings → Environment Variables**, adicione `DATABASE_URL`,
    `DATABASE_URL_UNPOOLED` e `AUTH_SECRET`.
 4. Rode `npm run db:migrate` apontando para o banco de produção (localmente, com
    as variáveis de produção no `.env.local`, ou pela pipeline de CI).
 5. Deploy.
+
+### Modo de acesso do Blob store
+
+O modo é escolhido quando a store é criada e **não muda depois**. O app funciona
+nos dois, então você não fica bloqueado se já criou uma store privada:
+
+| Modo | Como a imagem chega ao navegador | Quando usar |
+| --- | --- | --- |
+| **public** | URL do próprio Blob, servida direto pelo CDN | **Recomendado.** É o caso das fotos de produto, que precisam ser vistas por qualquer visitante da vitrine |
+| **private** | Rota `/api/blob/...` lê o arquivo autenticado e devolve os bytes | Se a store já existe como privada, ou se o conteúdo exigir autenticação |
+
+O modo é detectado na primeira imagem enviada e memorizado na instância. No modo
+privado, a rota de leitura manda `cache-control: immutable` — como cada caminho
+tem um UUID, a Vercel cacheia na borda e não há uma invocação de função por
+visualização.
+
+Trocar de store depois é seguro: a leitura tenta um modo e cai no outro, então
+imagens antigas continuam abrindo.
 
 ### Dois detalhes que costumam pegar
 
@@ -280,7 +298,8 @@ landing page do cliente final.
   modelo é multi-tenant com 4 papéis e não há login social. Trocar por Auth.js
   depois é uma mudança localizada em [`src/lib/auth.ts`](./src/lib/auth.ts).
 - **Fotos**: Vercel Blob em produção; sem `BLOB_READ_WRITE_TOKEN`, o ambiente de
-  desenvolvimento grava em `public/uploads` para não exigir token.
+  desenvolvimento grava em `public/uploads` para não exigir token. O app se
+  adapta aos dois modos de acesso da store — veja a seção 5.
 - **Vendas não viram lançamento financeiro.** A receita é lida direto de `sales`
   (fonte única) e `financial_entries` guarda só lançamentos manuais, evitando
   contagem duplicada.

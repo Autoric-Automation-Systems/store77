@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import { MapPin, MessageCircle, Package, Phone } from "lucide-react";
@@ -11,6 +12,7 @@ import {
   stores,
   type Product,
 } from "@/db/schema";
+import { toAbsoluteUrl } from "@/lib/blob";
 import { formatBRL } from "@/lib/format";
 import { hexToRgbChannels } from "@/lib/slug";
 
@@ -34,6 +36,7 @@ export async function generateMetadata({
   try {
     const store = await loadStore(slug);
     if (!store) return { title: "Loja não encontrada" };
+    const host = (await headers()).get("host");
     return {
       title: store.heroTitle ?? store.name,
       description:
@@ -42,7 +45,9 @@ export async function generateMetadata({
       openGraph: {
         title: store.heroTitle ?? store.name,
         description: store.heroSubtitle ?? undefined,
-        images: store.heroImageUrl ? [store.heroImageUrl] : undefined,
+        images: store.heroImageUrl
+          ? [toAbsoluteUrl(store.heroImageUrl, host)]
+          : undefined,
       },
     };
   } catch {
