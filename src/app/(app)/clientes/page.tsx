@@ -41,11 +41,31 @@ export default async function ClientesPage({
         document: customers.document,
         address: customers.address,
         notes: customers.notes,
-        purchaseCount: sql<number>`(select count(*) from ${sales} where ${sales.customerId} = ${customers.id} and ${sales.storeId} = ${storeId} and ${sales.status} = 'PAGA')::int`,
-        totalSpentCents: sql<number>`(select coalesce(sum(${sales.totalCents}), 0) from ${sales} where ${sales.customerId} = ${customers.id} and ${sales.storeId} = ${storeId} and ${sales.status} = 'PAGA')::int`,
+        // Agregado por JOIN: em uma consulta de uma única tabela o Drizzle monta
+        // os `sql` sem qualificar as colunas, e a correlação da subconsulta
+        // viraria `"customer_id" = "id"` — comparando a venda com ela mesma.
+        purchaseCount: sql<number>`count(${sales.id})::int`,
+        totalSpentCents: sql<number>`coalesce(sum(${sales.totalCents}), 0)::int`,
       })
       .from(customers)
+      .leftJoin(
+        sales,
+        and(
+          eq(sales.customerId, customers.id),
+          eq(sales.storeId, storeId),
+          eq(sales.status, "PAGA"),
+        ),
+      )
       .where(and(...filters))
+      .groupBy(
+        customers.id,
+        customers.name,
+        customers.email,
+        customers.phone,
+        customers.document,
+        customers.address,
+        customers.notes,
+      )
       .orderBy(asc(customers.name))
       .limit(100),
 

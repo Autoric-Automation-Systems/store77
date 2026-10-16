@@ -2,7 +2,7 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { Globe2 } from "lucide-react";
 import { db } from "@/db";
-import { categories, products, stores } from "@/db/schema";
+import { categories, productImages, products, stores } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { Card, CardHeader, EmptyState, PageHeader, Stat } from "@/components/ui";
 import { StoreSettingsForm } from "./store-settings-form";
@@ -32,8 +32,10 @@ export default async function VitrinePage() {
       .select({
         published: sql<number>`count(*) filter (where ${products.quantity} > 0)::int`,
         total: sql<number>`count(*)::int`,
-        withPhoto: sql<number>`count(*) filter (where exists (
-          select 1 from product_images pi where pi.product_id = ${products.id}
+        // `in` com subconsulta: dentro de `exists` o Drizzle não qualifica a
+        // coluna da loja e `${products.id}` acabaria resolvido como `pi.id`.
+        withPhoto: sql<number>`count(*) filter (where ${products.id} in (
+          select ${productImages.productId} from ${productImages}
         ))::int`,
       })
       .from(products)
