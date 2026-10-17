@@ -26,7 +26,7 @@ cp .env.example .env.local
 | Variável | Para que serve |
 | --- | --- |
 | `DATABASE_URL` | Connection string *pooled*. Usada em runtime. |
-| `DATABASE_URL_UNPOOLED` | Connection string direta. Usada por `drizzle-kit migrate`. |
+| `DATABASE_URL_UNPOOLED` | Connection string direta. Usada pelas migrações (`npm run db:migrate`). |
 | `AUTH_SECRET` | Assina o cookie de sessão (HS256). **Mínimo de 32 caracteres.** Gere com `openssl rand -base64 48`. |
 | `APP_URL` | URL pública usada nos links de e-mail. Em produção, o domínio real (sem barra no final). |
 | `EMAIL_PASS` | Senha de app do Gmail (16 caracteres) usada no envio SMTP. **Opcional em dev**: sem ela, o e-mail é impresso no terminal. **Obrigatória em produção** se não usar o Resend. |
@@ -247,11 +247,13 @@ imagens antigas continuam abrindo.
 
 ### Dois detalhes que costumam pegar
 
-**Migrações não rodam sozinhas.** O deploy do Vercel não aplica migração. Sempre
-que um commit adicionar um arquivo em [`drizzle/`](./drizzle), rode
-`npm run db:migrate` ou cole o SQL no Neon **antes** (ou logo depois) do deploy.
-Se a aplicação passar a ler ou gravar uma coluna que ainda não existe, a tela
-correspondente falha.
+**Migrações rodam no build, mas dependem das variáveis certas.** O
+`vercel-build` aplica as migrações pendentes antes do `next build`
+([`scripts/migrate.mjs`](./scripts/migrate.mjs)). O script usa a
+`DATABASE_URL_UNPOOLED` quando ela existe — DDL por conexão direta evita o
+pooler. Se a variável não estiver no ambiente do deploy, ele cai para
+`DATABASE_URL` e avisa no log. Sem nenhuma das duas, o build para com a mensagem
+"Nenhuma connection string encontrada".
 
 **Deployment Protection pode barrar visitantes (não é tarefa de deploy).** É uma
 configuração de acesso, em **Settings → Deployment Protection**. Quando ativa, o
