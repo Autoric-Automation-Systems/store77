@@ -353,6 +353,11 @@ export function Pdv({
                 value={discount}
                 onChange={(event) => setDiscount(event.target.value)}
               />
+              {state.fieldErrors?.discountCents ? (
+                <p className="mt-1 text-xs text-red-600">
+                  {state.fieldErrors.discountCents}
+                </p>
+              ) : null}
             </div>
           </div>
 

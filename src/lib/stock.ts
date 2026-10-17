@@ -53,6 +53,9 @@ export async function applyMovement(
   if (input.type === "AJUSTE" && input.quantity < 0) {
     throw new StockError("O saldo não pode ser negativo.");
   }
+  if (input.unitCostCents != null && input.unitCostCents < 0) {
+    throw new StockError("O custo unitário não pode ser negativo.");
+  }
 
   const balanceAfter =
     input.type === "ENTRADA"

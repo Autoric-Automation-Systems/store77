@@ -144,6 +144,11 @@ export function MovementForm({
               className="input"
               placeholder="0,00"
             />
+            {state.fieldErrors?.unitCostCents ? (
+              <p className="mt-1 text-xs text-red-600">
+                {state.fieldErrors.unitCostCents}
+              </p>
+            ) : null}
           </div>
         ) : null}
 

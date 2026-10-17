@@ -26,9 +26,14 @@ function revalidateCash() {
   revalidatePath("/dashboard");
 }
 
-function moneyFrom(formData: FormData, key: string): number {
+/**
+ * Valor monetário do formulário. `null` quando negativo: dinheiro em caixa
+ * não tem sinal.
+ */
+function moneyFrom(formData: FormData, key: string): number | null {
   const value = formData.get(key);
-  return parseMoneyToCents(typeof value === "string" ? value : null);
+  const cents = parseMoneyToCents(typeof value === "string" ? value : null);
+  return cents < 0 ? null : cents;
 }
 
 function notesFrom(formData: FormData): string | null {
@@ -60,6 +65,15 @@ export async function openCashSessionAction(
 ): Promise<ActionState> {
   const user = await requireUser();
   const openingAmountCents = moneyFrom(formData, "openingAmountCents");
+  if (openingAmountCents === null) {
+    return {
+      ok: false,
+      message: "O fundo de troco não pode ser negativo.",
+      fieldErrors: {
+        openingAmountCents: "Informe um valor igual ou maior que zero",
+      },
+    };
+  }
   const notes = notesFrom(formData);
 
   if (await findOpenSession(user.storeId)) {
@@ -100,7 +114,16 @@ export async function closeCashSessionAction(
     };
   }
 
-  const closingAmountCents = parseMoneyToCents(closingRaw);
+  const closingAmountCents = moneyFrom(formData, "closingAmountCents");
+  if (closingAmountCents === null) {
+    return {
+      ok: false,
+      message: "O valor contado não pode ser negativo.",
+      fieldErrors: {
+        closingAmountCents: "Informe um valor igual ou maior que zero",
+      },
+    };
+  }
   const notes = notesFrom(formData);
   const closedAt = new Date();
   const userStoreId = user.storeId;

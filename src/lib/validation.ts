@@ -15,9 +15,22 @@ export const passwordSchema = z
   .min(8, "A senha deve ter ao menos 8 caracteres")
   .max(72, "A senha deve ter no máximo 72 caracteres");
 
+/**
+ * Maior valor que cabe em `integer` no Postgres (colunas de centavos).
+ * Sem este teto, um valor absurdo estoura o INSERT e vira erro 500.
+ */
+const MAX_INT4 = 2_147_483_647;
+
+/**
+ * Valor monetário em reais -> centavos. Negativo é sempre erro de digitação:
+ * preço, custo, desconto e valores de caixa não podem inverter o sinal do
+ * lançamento (venda que credita o caixa, desconto que aumenta o total).
+ */
 export const moneySchema = z
   .union([z.string(), z.number()])
-  .transform((value) => parseMoneyToCents(value as string | number));
+  .transform((value) => parseMoneyToCents(value as string | number))
+  .refine((cents) => cents >= 0, "Informe um valor igual ou maior que zero")
+  .refine((cents) => cents <= MAX_INT4, "Valor acima do limite permitido");
 
 /**
  * WhatsApp é usado para montar o link `wa.me`, que exige o número em formato
@@ -112,8 +125,17 @@ export const productSchema = z.object({
   unit: z.string().trim().max(6).default("UN"),
   priceCents: moneySchema,
   costCents: moneySchema,
-  quantity: z.coerce.number().int().min(0, "Quantidade não pode ser negativa"),
-  minQuantity: z.coerce.number().int().min(0).default(0),
+  quantity: z.coerce
+    .number()
+    .int()
+    .min(0, "Quantidade não pode ser negativa")
+    .max(MAX_INT4, "Quantidade acima do limite permitido"),
+  minQuantity: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(MAX_INT4, "Quantidade acima do limite permitido")
+    .default(0),
   location: optionalText(120),
   active: booleanField.default(true),
   images: z.array(z.string().trim().min(1)).max(8).default([]),
@@ -122,7 +144,11 @@ export const productSchema = z.object({
 export const stockMovementSchema = z.object({
   productId: z.string().uuid("Selecione um produto"),
   type: z.enum(["ENTRADA", "SAIDA", "AJUSTE"]),
-  quantity: z.coerce.number().int().positive("Informe uma quantidade maior que zero"),
+  quantity: z.coerce
+    .number()
+    .int()
+    .positive("Informe uma quantidade maior que zero")
+    .max(MAX_INT4, "Quantidade acima do limite permitido"),
   unitCostCents: moneySchema.optional(),
   reason: optionalText(160),
 });
@@ -178,7 +204,11 @@ export const teamMemberSchema = z.object({
 
 export const saleItemInputSchema = z.object({
   productId: z.string().uuid(),
-  quantity: z.coerce.number().int().positive(),
+  quantity: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(MAX_INT4, "Quantidade acima do limite permitido"),
 });
 
 export const checkoutSchema = z.object({
@@ -195,7 +225,10 @@ export const checkoutSchema = z.object({
 
 export const cashMovementSchema = z.object({
   type: z.enum(["SANGRIA", "SUPRIMENTO", "ENTRADA", "SAIDA"]),
-  amountCents: moneySchema.refine((value) => value > 0, "Informe um valor"),
+  amountCents: moneySchema.refine(
+    (value) => value > 0,
+    "Informe um valor maior que zero",
+  ),
   description: optionalText(160),
 });
 
@@ -203,7 +236,10 @@ export const financialEntrySchema = z.object({
   kind: z.enum(["RECEBER", "PAGAR"]),
   description: z.string().trim().min(2, "Informe a descrição").max(160),
   category: optionalText(60),
-  amountCents: moneySchema.refine((value) => value > 0, "Informe um valor"),
+  amountCents: moneySchema.refine(
+    (value) => value > 0,
+    "Informe um valor maior que zero",
+  ),
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
   paymentMethod: z
     .enum(["DINHEIRO", "PIX", "DEBITO", "CREDITO", "OUTRO"])

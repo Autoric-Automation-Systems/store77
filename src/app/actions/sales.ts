@@ -130,6 +130,14 @@ export async function finalizeSaleAction(
         const product = byId.get(item.productId);
         if (!product) throw new StockError("Produto indisponível.");
 
+        // Preço negativo inverteria o sinal da venda e do lançamento no caixa.
+        // Só chega aqui por cadastro antigo, anterior à validação do formulário.
+        if (product.priceCents < 0) {
+          throw new StockError(
+            `O produto "${product.name}" está com preço negativo. Corrija o cadastro antes de vender.`,
+          );
+        }
+
         return {
           product,
           quantity: item.quantity,
