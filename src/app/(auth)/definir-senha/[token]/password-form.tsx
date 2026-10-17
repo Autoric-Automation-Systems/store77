@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { setPasswordAction } from "@/app/actions/auth";
 import { SubmitButton } from "@/components/submit-button";
+import { PasswordInput } from "@/components/password-input";
 import { Alert, Card } from "@/components/ui";
 import type { ActionState } from "@/lib/validation";
 
@@ -46,15 +47,13 @@ export function PasswordForm({
           <label className="label" htmlFor="password">
             {isReset ? "Nova senha" : "Senha"}
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             required
             minLength={8}
             maxLength={72}
             autoComplete="new-password"
-            className="input"
             placeholder="Mínimo de 8 caracteres"
           />
           {state.fieldErrors?.password ? (
@@ -68,15 +67,13 @@ export function PasswordForm({
           <label className="label" htmlFor="confirmPassword">
             Confirme a senha
           </label>
-          <input
+          <PasswordInput
             id="confirmPassword"
             name="confirmPassword"
-            type="password"
             required
             minLength={8}
             maxLength={72}
             autoComplete="new-password"
-            className="input"
             placeholder="Repita a senha"
           />
           {state.fieldErrors?.confirmPassword ? (

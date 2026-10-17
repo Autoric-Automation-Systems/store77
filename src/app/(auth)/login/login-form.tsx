@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { loginAction } from "@/app/actions/auth";
 import { SubmitButton } from "@/components/submit-button";
+import { PasswordInput } from "@/components/password-input";
 import { Alert, Card } from "@/components/ui";
 import type { ActionState } from "@/lib/validation";
 
@@ -52,13 +53,11 @@ export function LoginForm({ next }: { next?: string }) {
           <label className="label" htmlFor="password">
             Senha
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="current-password"
             required
-            className="input"
             placeholder="••••••••"
           />
           {state.fieldErrors?.password ? (

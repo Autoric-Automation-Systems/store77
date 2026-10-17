@@ -11,6 +11,7 @@ import {
   updateTeamMemberAction,
 } from "@/app/actions/users";
 import { SubmitButton } from "@/components/submit-button";
+import { PasswordInput } from "@/components/password-input";
 import { Alert, Card, CardHeader, Field } from "@/components/ui";
 import type { ActionState } from "@/lib/validation";
 
@@ -210,13 +211,11 @@ export function ResetPasswordForm({
           error={state.fieldErrors?.password}
           hint="Mínimo de 8 caracteres."
         >
-          <input
+          <PasswordInput
             id="reset-password"
             name="password"
-            type="password"
             required
             autoComplete="new-password"
-            className="input"
           />
         </Field>
 
@@ -250,13 +249,11 @@ export function ChangePasswordForm() {
           name="current-password"
           error={state.fieldErrors?.currentPassword}
         >
-          <input
+          <PasswordInput
             id="current-password"
             name="currentPassword"
-            type="password"
             required
             autoComplete="current-password"
-            className="input"
           />
         </Field>
 
@@ -266,13 +263,11 @@ export function ChangePasswordForm() {
           error={state.fieldErrors?.newPassword}
           hint="Mínimo de 8 caracteres."
         >
-          <input
+          <PasswordInput
             id="new-password"
             name="newPassword"
-            type="password"
             required
             autoComplete="new-password"
-            className="input"
           />
         </Field>
 
