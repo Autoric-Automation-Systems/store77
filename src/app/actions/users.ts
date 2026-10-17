@@ -14,6 +14,7 @@ import {
 } from "@/lib/auth";
 import { sendPasswordEmail } from "@/lib/auth-emails";
 import { issueAuthToken } from "@/lib/auth-tokens";
+import { migrationHint } from "@/lib/db-errors";
 import { canSendEmail } from "@/lib/mail";
 import {
   fieldErrorsFrom,
@@ -190,7 +191,7 @@ export async function createTeamMemberAction(
       }
     }
   } catch (error) {
-    console.error("Falha ao enviar convite:", error);
+    console.error(`Falha ao enviar convite:${migrationHint(error)}`, error);
     return {
       ok: true,
       message:

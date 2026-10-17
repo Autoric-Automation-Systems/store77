@@ -16,6 +16,7 @@ import {
   issueAuthToken,
   setPasswordWithToken,
 } from "@/lib/auth-tokens";
+import { migrationHint } from "@/lib/db-errors";
 import { canSendEmail } from "@/lib/mail";
 import { isReservedSlug, slugify } from "@/lib/slug";
 import {
@@ -155,7 +156,10 @@ export async function registerStoreAction(
       skipCooldown: true,
     });
   } catch (error) {
-    console.error("Falha ao gerar link de criação de senha:", error);
+    console.error(
+      `Falha ao gerar link de criação de senha:${migrationHint(error)}`,
+      error,
+    );
   }
 
   redirect(
@@ -269,7 +273,10 @@ export async function requestPasswordResetAction(
         invite: user.role !== "OWNER",
       });
     } catch (error) {
-      console.error("Falha ao gerar link de redefinição de senha:", error);
+      console.error(
+        `Falha ao gerar link de redefinição de senha:${migrationHint(error)}`,
+        error,
+      );
     }
   }
 

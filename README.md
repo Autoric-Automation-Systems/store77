@@ -220,8 +220,11 @@ Convenções:
    `DATABASE_URL_UNPOOLED`, `AUTH_SECRET`, `APP_URL`, `EMAIL_USER`,
    `EMAIL_PASS` e `EMAIL_FROM`. Se preferir o Resend, adicione
    `RESEND_API_KEY` em vez de `EMAIL_PASS`.
-4. Rode `npm run db:migrate` apontando para o banco de produção (localmente, com
-   as variáveis de produção no `.env.local`, ou pela pipeline de CI).
+4. As migrações rodam automaticamente no build (`vercel-build` executa
+   `npm run db:migrate` antes de `next build`). Se preferir aplicar antes do
+   deploy, rode `npm run db:migrate` apontando para o banco de produção
+   (localmente, com as variáveis de produção no `.env.local`, ou pela pipeline
+   de CI).
 5. Deploy.
 
 ### Modo de acesso do Blob store
