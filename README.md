@@ -28,13 +28,19 @@ cp .env.example .env.local
 | `DATABASE_URL` | Connection string *pooled*. Usada em runtime. |
 | `DATABASE_URL_UNPOOLED` | Connection string direta. Usada por `drizzle-kit migrate`. |
 | `AUTH_SECRET` | Assina o cookie de sessão (HS256). **Mínimo de 32 caracteres.** Gere com `openssl rand -base64 48`. |
+| `APP_URL` | URL pública usada nos links de e-mail. Em produção, o domínio real (sem barra no final). |
+| `EMAIL_PASS` | Senha de app do Gmail (16 caracteres) usada no envio SMTP. **Opcional em dev**: sem ela, o e-mail é impresso no terminal. **Obrigatória em produção** se não usar o Resend. |
+| `EMAIL_USER` | Conta autenticada no SMTP. Se vazio, usa o endereço de `EMAIL_FROM`. |
+| `EMAIL_FROM` | Remetente exibido. No Gmail, precisa ser a mesma conta autenticada. |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` | Servidor SMTP. Padrões: `smtp.gmail.com`, `465`, `true`. |
+| `RESEND_API_KEY` | Alternativa ao SMTP, usada como reserva se o SMTP falhar. **Opcional.** |
 | `BLOB_READ_WRITE_TOKEN` | Upload de fotos no Vercel Blob. **Opcional em dev** (sem ele, as imagens vão para `public/uploads`). |
 
 ### 1.3 Crie as tabelas
 
 ```bash
 npm install
-npm run db:migrate    # aplica drizzle/0000_initial.sql e drizzle/0001_terms_accepted.sql
+npm run db:migrate    # aplica as migrações de drizzle/ na ordem
 ```
 
 Alternativas:
@@ -42,7 +48,8 @@ Alternativas:
 - `npm run db:push` — sincroniza o schema sem versionar migração.
 - `npm run db:studio` — navegador visual dos dados.
 - **Sem CLI:** cole o conteúdo de cada arquivo de [`drizzle/`](./drizzle) no SQL
-  Editor do Neon, **na ordem** (`0000_initial.sql`, depois `0001_terms_accepted.sql`).
+  Editor do Neon, **na ordem** (`0000_initial.sql`, `0001_terms_accepted.sql`,
+  `0002_*`).
 
 ### 1.4 (Opcional) Dados de demonstração
 
@@ -85,11 +92,52 @@ Sem conta ainda? `/cadastro` cria a loja e o usuário proprietário em um passo.
 | `/clientes/[id]` | Caixa | Ficha do cliente: ticket médio, última compra, dados de contato e as vendas vinculadas. |
 | `/financeiro` | Financeiro | Contas a pagar/receber, baixa, vencidos e receita de vendas. |
 | `/vitrine` | Vitrine | Configuração da landing page: link, logo, hero, textos, paleta e contato. |
-| `/usuarios` | Equipe | Membros, papéis, redefinição de senha. |
+| `/usuarios` | Equipe | Membros, papéis, convite por e-mail e redefinição de senha. |
+| `/cadastro` | Autenticação | Criação da loja; o e-mail é confirmado e a senha é criada por link. |
+| `/esqueci-senha` | Autenticação | Solicitação de link para redefinir a senha. |
+| `/definir-senha/[token]` | Autenticação | Criação/redefinição de senha a partir do link enviado por e-mail. |
 | `/loja/[slug]` | Pública | Landing page gerada automaticamente a partir do estoque. |
 | `/ajuda` | Pública | Central de ajuda: primeiros passos, guia dos módulos, permissões e FAQ. |
 | `/termos` | Pública | Termos de Uso. |
 | `/privacidade` | Pública | Política de Privacidade (LGPD). |
+
+### Cadastro, confirmação de e-mail e senha
+
+O cadastro não pede senha. O fluxo é:
+
+1. `/cadastro` cria a loja e o usuário `OWNER` sem senha e com
+   `email_verified_at` nulo.
+2. Um e-mail com o link `/definir-senha/<token>` é enviado. O token tem 32 bytes
+   aleatórios, é guardado apenas como hash SHA-256, expira em **48 horas** e só
+   pode ser usado uma vez.
+3. Ao criar a senha, a conta é marcada como verificada e a pessoa entra direto no
+   painel.
+4. `/esqueci-senha` envia um link de redefinição válido por **1 hora**. A resposta
+   é sempre a mesma, exista ou não a conta, para não revelar e-mails cadastrados.
+5. Em `/usuarios`, o admin convida por nome, e-mail e papel. O convite mostra
+   **“Convite pendente”** até a pessoa criar a senha pelo link. A redefinição
+   manual pelo admin continua disponível.
+6. `/cadastro/confirmar` reenvia o link de confirmação/criação de senha. A tela
+   também está acessível em **“Reenviar confirmação”** na página de login.
+7. Gerar um link novo invalida os anteriores. Reenvios têm intervalo mínimo de
+   60 segundos.
+
+Em desenvolvimento, sem `EMAIL_PASS` nem `RESEND_API_KEY`, o e-mail (com o
+link) é impresso no terminal do `npm run dev`. Em produção, configure o SMTP do
+Gmail (`EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM`) ou o Resend — sem isso, cadastro
+e recuperação de senha ficam bloqueados com uma mensagem clara.
+
+**Gmail:** ative a verificação em duas etapas na conta e gere uma **senha de
+app** em <https://myaccount.google.com/apppasswords>. Use essa senha de 16
+caracteres em `EMAIL_PASS` (não a senha normal da conta). O `EMAIL_FROM` precisa
+ser a mesma conta autenticada; o Gmail reescreve o remetente caso contrário.
+
+**Resend:** verifique um domínio em <https://resend.com/domains> e use esse
+domínio em `EMAIL_FROM`. Se as duas opções estiverem configuradas, o SMTP é
+tentado primeiro e o Resend entra como reserva.
+
+Contas criadas antes da migração `0002` são marcadas como verificadas
+automaticamente, desde que já tenham senha, para não perderem o acesso.
 
 ### Papéis e permissões
 
@@ -169,7 +217,9 @@ Convenções:
 2. Em **Storage**, crie um **Blob store** com acesso **public** e conecte ao
    projeto — isso injeta `BLOB_READ_WRITE_TOKEN`.
 3. Em **Settings → Environment Variables**, adicione `DATABASE_URL`,
-   `DATABASE_URL_UNPOOLED` e `AUTH_SECRET`.
+   `DATABASE_URL_UNPOOLED`, `AUTH_SECRET`, `APP_URL`, `EMAIL_USER`,
+   `EMAIL_PASS` e `EMAIL_FROM`. Se preferir o Resend, adicione
+   `RESEND_API_KEY` em vez de `EMAIL_PASS`.
 4. Rode `npm run db:migrate` apontando para o banco de produção (localmente, com
    as variáveis de produção no `.env.local`, ou pela pipeline de CI).
 5. Deploy.
@@ -313,6 +363,5 @@ landing page do cliente final.
 - Checkout online de verdade (hoje a vitrine converte via WhatsApp).
 - Leitor de código de barras no PDV (o campo `barcode` já existe).
 - Relatórios por período (curva ABC, giro de estoque, lucratividade).
-- Convite de equipe por e-mail com token de uso único.
 - Row Level Security no Neon, trocando o filtro por `store_id` na aplicação por
   política no banco.

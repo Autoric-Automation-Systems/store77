@@ -16,7 +16,8 @@ export function RegisterForm() {
     <Card className="card-pad">
       <h1 className="text-xl font-bold text-ink-900">Criar minha loja</h1>
       <p className="mt-1 text-sm text-ink-500">
-        Em segundos você tem painel de estoque e vitrine online.
+        Informe os dados da loja. Enviaremos um link no seu e-mail para confirmar
+        o cadastro e criar a senha.
       </p>
 
       {state.message ? (
@@ -81,27 +82,6 @@ export function RegisterForm() {
           ) : null}
         </div>
 
-        <div>
-          <label className="label" htmlFor="password">
-            Senha
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            required
-            minLength={8}
-            autoComplete="new-password"
-            className="input"
-            placeholder="Mínimo de 8 caracteres"
-          />
-          {state.fieldErrors?.password ? (
-            <p className="mt-1 text-xs text-red-600">
-              {state.fieldErrors.password}
-            </p>
-          ) : null}
-        </div>
-
         <label className="flex items-start gap-3 rounded-xl border border-ink-200 bg-ink-50 px-4 py-3">
           <input
             type="checkbox"
@@ -137,7 +117,7 @@ export function RegisterForm() {
           className="btn btn-primary w-full"
           pendingLabel="Criando loja..."
         >
-          Criar loja e entrar
+          Criar loja
         </SubmitButton>
       </form>
 

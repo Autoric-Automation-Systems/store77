@@ -54,6 +54,11 @@ export const cashMovementType = pgEnum("cash_movement_type", [
   "SUPRIMENTO",
 ]);
 
+export const authTokenType = pgEnum("auth_token_type", [
+  "SET_PASSWORD",
+  "RESET_PASSWORD",
+]);
+
 export const financialKind = pgEnum("financial_kind", ["RECEBER", "PAGAR"]);
 
 export const financialStatus = pgEnum("financial_status", [
@@ -111,10 +116,13 @@ export const users = pgTable(
       .references(() => stores.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     email: text("email").notNull(),
-    passwordHash: text("password_hash").notNull(),
+    // Nulo enquanto o usuário ainda não criou a senha pelo link enviado por e-mail.
+    passwordHash: text("password_hash"),
     role: userRole("role").notNull().default("VENDEDOR"),
     phone: text("phone"),
     active: boolean("active").notNull().default(true),
+    // Prova de que o e-mail pertence à pessoa: criado/reativado ao definir a senha.
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
     // Prova de aceite dos Termos de Uso e da Política de Privacidade.
     termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
     ...timestamps,
@@ -122,6 +130,28 @@ export const users = pgTable(
   (table) => [
     uniqueIndex("users_email_key").on(sql`lower(${table.email})`),
     index("users_store_idx").on(table.storeId),
+  ],
+);
+
+export const authTokens = pgTable(
+  "auth_tokens",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: authTokenType("type").notNull(),
+    // Só o hash SHA-256 fica no banco; o token em claro existe apenas no link.
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("auth_tokens_hash_key").on(table.tokenHash),
+    index("auth_tokens_user_idx").on(table.userId, table.type),
   ],
 );
 
@@ -395,8 +425,13 @@ export const storesRelations = relations(stores, ({ many }) => ({
   sales: many(sales),
 }));
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   store: one(stores, { fields: [users.storeId], references: [stores.id] }),
+  authTokens: many(authTokens),
+}));
+
+export const authTokensRelations = relations(authTokens, ({ one }) => ({
+  user: one(users, { fields: [authTokens.userId], references: [users.id] }),
 }));
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -441,6 +476,8 @@ export const salesRelations = relations(sales, ({ one, many }) => ({
 
 export type Store = typeof stores.$inferSelect;
 export type User = typeof users.$inferSelect;
+export type AuthToken = typeof authTokens.$inferSelect;
+export type AuthTokenType = (typeof authTokenType.enumValues)[number];
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ProductImage = typeof productImages.$inferSelect;

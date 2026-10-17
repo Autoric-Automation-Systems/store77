@@ -15,6 +15,13 @@
       "when": 1791930899032,
       "tag": "0001_terms_accepted",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792245365775,
+      "tag": "0002_tan_ultron",
+      "breakpoints": true
     }
   ]
 }

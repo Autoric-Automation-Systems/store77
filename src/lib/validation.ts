@@ -57,7 +57,6 @@ export const registerSchema = z.object({
   storeName: z.string().trim().min(2, "Informe o nome da loja").max(120),
   name: z.string().trim().min(2, "Informe seu nome").max(120),
   email: emailSchema,
-  password: passwordSchema,
   acceptTerms: booleanField.refine(
     (value) => value === true,
     "É preciso aceitar os Termos de Uso e a Política de Privacidade",
@@ -68,6 +67,21 @@ export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, "Informe a senha"),
 });
+
+export const forgotPasswordSchema = z.object({
+  email: emailSchema,
+});
+
+export const setPasswordSchema = z
+  .object({
+    token: z.string().min(20, "Link inválido"),
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Confirme a senha"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "As senhas não coincidem",
+  });
 
 export const categorySchema = z.object({
   id: z.string().uuid().optional(),
@@ -151,7 +165,6 @@ export const storeSettingsSchema = z.object({
 export const teamMemberSchema = z.object({
   name: z.string().trim().min(2, "Informe o nome").max(120),
   email: emailSchema,
-  password: passwordSchema,
   role: z.enum(["GERENTE", "VENDEDOR", "CLIENTE"]),
 });
 

@@ -130,7 +130,8 @@ const MODULES = [
     icon: Users,
     title: "Equipe",
     body: [
-      "Convide as pessoas da loja e defina o papel de cada uma. Cada acesso deve ser individual: movimentações e vendas ficam vinculadas a quem as registrou.",
+      "Convide as pessoas da loja e defina o papel de cada uma. O convite chega por e-mail e a própria pessoa cria a senha pelo link.",
+      "Enquanto a pessoa não cria a senha, ela aparece como “Convite pendente” na lista. O convite vale por 48 horas e só pode ser usado uma vez.",
       "Todos os membros podem trocar a própria senha em Equipe → Minha senha.",
       "O sistema impede remover, desativar ou rebaixar o último proprietário ativo, para que ninguém perca o acesso à loja.",
       "Redefinir a senha de alguém é útil quando a pessoa perde o acesso, mas exige que ela confie em quem redefine.",
@@ -195,7 +196,15 @@ const FAQ = [
   },
   {
     q: "Esqueci minha senha. Como recupero?",
-    a: "Hoje a redefinição é feita por alguém com perfil de proprietário ou gerente em Equipe. Se você é o único proprietário e perdeu o acesso, fale com o suporte para validarmos a titularidade da loja.",
+    a: "Na tela de login, use “Esqueci minha senha” e informe o e-mail da conta. Você recebe um link válido por 1 hora para definir uma nova senha. Se o cadastro ainda não foi confirmado, use “Reenviar confirmação” ou peça um novo convite a alguém da gestão.",
+  },
+  {
+    q: "Não recebi o e-mail para criar minha senha. E agora?",
+    a: "Confira a caixa de spam e a aba Promoções. Se ainda não chegou, abra “Reenviar confirmação” na tela de login e informe o mesmo e-mail. O link vale por 48 horas e só pode ser usado uma vez.",
+  },
+  {
+    q: "Recebi um convite da equipe. Como começo a usar?",
+    a: "Abra o link do e-mail, crie uma senha com pelo menos 8 caracteres e confirme. Você entra direto no painel com o papel definido no convite. Se o link expirou, use “Reenviar confirmação” na tela de login com o e-mail do convite.",
   },
 ];
 

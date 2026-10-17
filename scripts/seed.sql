@@ -48,8 +48,8 @@ INSERT INTO stores (
 
 
 -- 3. Usuários da loja. O hash é bcrypt da senha store77demo.
-INSERT INTO users (store_id, name, email, password_hash, role, terms_accepted_at)
-SELECT s.id, v.name, v.email, v.password_hash, v.role::user_role, now()
+INSERT INTO users (store_id, name, email, password_hash, role, email_verified_at, terms_accepted_at)
+SELECT s.id, v.name, v.email, v.password_hash, v.role::user_role, now(), now()
 FROM stores s
 CROSS JOIN (VALUES
   ('Ana Ribeiro', 'demo@store77.app', '$2b$10$DlXPztLgsWNpmJo7iuq/MeHbjLBVy9KduHulzgDX1KzFbdrn0Yt.y', 'OWNER'),

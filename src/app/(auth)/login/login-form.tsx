@@ -73,6 +73,18 @@ export function LoginForm({ next }: { next?: string }) {
         </SubmitButton>
       </form>
 
+      <div className="mt-5 flex flex-wrap justify-between gap-2 text-sm">
+        <Link href="/esqueci-senha" className="font-semibold text-brand-600">
+          Esqueci minha senha
+        </Link>
+        <Link
+          href="/cadastro/confirmar"
+          className="font-semibold text-ink-600 hover:text-ink-800"
+        >
+          Reenviar confirmação
+        </Link>
+      </div>
+
       <p className="mt-6 text-center text-sm text-ink-500">
         Ainda não tem loja?{" "}
         <Link href="/cadastro" className="font-semibold text-brand-600">

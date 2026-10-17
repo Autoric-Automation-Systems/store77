@@ -37,7 +37,7 @@ export function TeamMemberForm() {
     <Card className="h-fit">
       <CardHeader
         title="Adicionar membro"
-        description="Crie acessos para a equipe ou para um cliente da loja."
+        description="A pessoa recebe um e-mail com link para criar a própria senha."
       />
       <form action={formAction} className="card-pad space-y-4">
         {state.message ? (
@@ -66,22 +66,6 @@ export function TeamMemberForm() {
           />
         </Field>
 
-        <Field
-          label="Senha inicial"
-          name="password"
-          error={state.fieldErrors?.password}
-          hint="Mínimo de 8 caracteres."
-        >
-          <input
-            id="password"
-            name="password"
-            type="password"
-            required
-            autoComplete="new-password"
-            className="input"
-          />
-        </Field>
-
         <Field label="Papel" name="role">
           <select id="role" name="role" className="input" defaultValue="VENDEDOR">
             {ASSIGNABLE_ROLES.map((role) => (
@@ -93,7 +77,7 @@ export function TeamMemberForm() {
         </Field>
 
         <SubmitButton className="btn btn-primary w-full">
-          Adicionar membro
+          Enviar convite
         </SubmitButton>
       </form>
     </Card>

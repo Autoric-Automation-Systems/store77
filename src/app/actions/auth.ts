@@ -1,23 +1,38 @@
 "use server";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { categories, stores, users } from "@/db/schema";
+import { categories, stores, users, type AuthTokenType } from "@/db/schema";
 import {
   createSessionCookie,
   destroySessionCookie,
   hashPassword,
   verifyPassword,
 } from "@/lib/auth";
+import { sendPasswordEmail } from "@/lib/auth-emails";
+import {
+  findPendingAuthToken,
+  issueAuthToken,
+  setPasswordWithToken,
+} from "@/lib/auth-tokens";
+import { canSendEmail } from "@/lib/mail";
 import { isReservedSlug, slugify } from "@/lib/slug";
 import {
   fieldErrorsFrom,
   formToObject,
+  forgotPasswordSchema,
   loginSchema,
   registerSchema,
+  setPasswordSchema,
   type ActionState,
 } from "@/lib/validation";
+
+const GENERIC_EMAIL_MESSAGE =
+  "Se este e-mail estiver cadastrado, você receberá um link em instantes. Confira também a caixa de spam.";
+
+const MAIL_NOT_CONFIGURED_MESSAGE =
+  "O envio de e-mails não está configurado. Peça ao suporte para ativar o serviço.";
 
 async function uniqueSlug(base: string): Promise<string> {
   const root = slugify(base) || "loja";
@@ -36,6 +51,38 @@ async function uniqueSlug(base: string): Promise<string> {
   return `${root}-${Date.now().toString(36)}`;
 }
 
+async function deliverPasswordLink({
+  user,
+  storeName,
+  type,
+  invite = false,
+  skipCooldown = false,
+}: {
+  user: { id: string; name: string; email: string };
+  storeName: string;
+  type: AuthTokenType;
+  invite?: boolean;
+  skipCooldown?: boolean;
+}): Promise<boolean> {
+  const issued = await issueAuthToken({
+    userId: user.id,
+    type,
+    skipCooldown,
+  });
+
+  // Cooldown ativo: o link anterior continua válido, então não há o que reenviar.
+  if (!issued) return true;
+
+  return sendPasswordEmail({
+    to: user.email,
+    name: user.name,
+    storeName,
+    token: issued.token,
+    type,
+    invite,
+  });
+}
+
 export async function registerStoreAction(
   _prev: ActionState,
   formData: FormData,
@@ -49,7 +96,11 @@ export async function registerStoreAction(
     };
   }
 
-  const { storeName, name, email, password } = parsed.data;
+  if (!canSendEmail()) {
+    return { ok: false, message: MAIL_NOT_CONFIGURED_MESSAGE };
+  }
+
+  const { storeName, name, email } = parsed.data;
 
   const [existing] = await db()
     .select({ id: users.id })
@@ -66,7 +117,6 @@ export async function registerStoreAction(
   }
 
   const slug = await uniqueSlug(storeName);
-  const passwordHash = await hashPassword(password);
 
   const [store] = await db()
     .insert(stores)
@@ -89,14 +139,28 @@ export async function registerStoreAction(
       storeId: store.id,
       name,
       email,
-      passwordHash,
+      passwordHash: null,
+      emailVerifiedAt: null,
       role: "OWNER",
       termsAcceptedAt: new Date(),
     })
     .returning({ id: users.id });
 
-  await createSessionCookie(owner.id);
-  redirect("/dashboard");
+  let sent = false;
+  try {
+    sent = await deliverPasswordLink({
+      user: { id: owner.id, name, email },
+      storeName,
+      type: "SET_PASSWORD",
+      skipCooldown: true,
+    });
+  } catch (error) {
+    console.error("Falha ao gerar link de criação de senha:", error);
+  }
+
+  redirect(
+    `/cadastro/confirmar?email=${encodeURIComponent(email)}${sent ? "" : "&falha=1"}`,
+  );
 }
 
 export async function loginAction(
@@ -118,6 +182,7 @@ export async function loginAction(
     .select({
       id: users.id,
       passwordHash: users.passwordHash,
+      emailVerifiedAt: users.emailVerifiedAt,
       active: users.active,
     })
     .from(users)
@@ -132,6 +197,22 @@ export async function loginAction(
 
   if (!user || !user.active) return invalid;
 
+  if (!user.passwordHash) {
+    return {
+      ok: false,
+      message:
+        "Sua conta ainda não tem senha. Use o link enviado por e-mail ou reenvie a confirmação.",
+    };
+  }
+
+  if (!user.emailVerifiedAt) {
+    return {
+      ok: false,
+      message:
+        "Confirme seu e-mail para ativar a conta. Reenvie o link em “Reenviar confirmação”.",
+    };
+  }
+
   const valid = await verifyPassword(password, user.passwordHash);
   if (!valid) return invalid;
 
@@ -144,6 +225,148 @@ export async function loginAction(
       : "/dashboard";
 
   redirect(target);
+}
+
+export async function requestPasswordResetAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = forgotPasswordSchema.safeParse(formToObject(formData));
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: "Verifique os campos destacados.",
+      fieldErrors: fieldErrorsFrom(parsed.error),
+    };
+  }
+
+  if (!canSendEmail()) {
+    return { ok: false, message: MAIL_NOT_CONFIGURED_MESSAGE };
+  }
+
+  const { email } = parsed.data;
+
+  const [user] = await db()
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      passwordHash: users.passwordHash,
+      role: users.role,
+      storeName: stores.name,
+    })
+    .from(users)
+    .innerJoin(stores, eq(stores.id, users.storeId))
+    .where(and(sql`lower(${users.email}) = ${email}`, eq(users.active, true)))
+    .limit(1);
+
+  if (user) {
+    try {
+      await deliverPasswordLink({
+        user,
+        storeName: user.storeName,
+        type: user.passwordHash ? "RESET_PASSWORD" : "SET_PASSWORD",
+        invite: user.role !== "OWNER",
+      });
+    } catch (error) {
+      console.error("Falha ao gerar link de redefinição de senha:", error);
+    }
+  }
+
+  // Mesma resposta exista ou não a conta: evita descobrir e-mails cadastrados.
+  return { ok: true, message: GENERIC_EMAIL_MESSAGE };
+}
+
+export async function resendConfirmationAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = forgotPasswordSchema.safeParse(formToObject(formData));
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: "Verifique os campos destacados.",
+      fieldErrors: fieldErrorsFrom(parsed.error),
+    };
+  }
+
+  if (!canSendEmail()) {
+    return { ok: false, message: MAIL_NOT_CONFIGURED_MESSAGE };
+  }
+
+  const { email } = parsed.data;
+
+  const [user] = await db()
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      passwordHash: users.passwordHash,
+      emailVerifiedAt: users.emailVerifiedAt,
+      role: users.role,
+      storeName: stores.name,
+    })
+    .from(users)
+    .innerJoin(stores, eq(stores.id, users.storeId))
+    .where(and(sql`lower(${users.email}) = ${email}`, eq(users.active, true)))
+    .limit(1);
+
+  const alreadyActive = Boolean(user?.passwordHash && user.emailVerifiedAt);
+
+  if (user && !alreadyActive) {
+    try {
+      await deliverPasswordLink({
+        user,
+        storeName: user.storeName,
+        type: user.passwordHash ? "RESET_PASSWORD" : "SET_PASSWORD",
+        invite: user.role !== "OWNER",
+      });
+    } catch (error) {
+      console.error("Falha ao reenviar confirmação:", error);
+    }
+  }
+
+  return {
+    ok: true,
+    message:
+      "Se este e-mail estiver pendente de confirmação, enviamos um novo link em instantes.",
+  };
+}
+
+export async function setPasswordAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = setPasswordSchema.safeParse(formToObject(formData));
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: "Verifique os campos destacados.",
+      fieldErrors: fieldErrorsFrom(parsed.error),
+    };
+  }
+
+  const { token, password } = parsed.data;
+
+  const exists = await findPendingAuthToken(token);
+  if (!exists) {
+    return {
+      ok: false,
+      message: "Este link é inválido ou expirou. Solicite um novo e-mail.",
+    };
+  }
+
+  const passwordHash = await hashPassword(password);
+  const result = await setPasswordWithToken(token, passwordHash);
+  if (!result) {
+    return {
+      ok: false,
+      message: "Este link é inválido ou expirou. Solicite um novo e-mail.",
+    };
+  }
+
+  await createSessionCookie(result.userId);
+  redirect("/dashboard");
 }
 
 export async function logoutAction(): Promise<void> {

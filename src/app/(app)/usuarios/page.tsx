@@ -45,6 +45,7 @@ export default async function UsuariosPage({
         phone: users.phone,
         role: users.role,
         active: users.active,
+        emailVerifiedAt: users.emailVerifiedAt,
         createdAt: users.createdAt,
       })
       .from(users)
@@ -110,6 +111,11 @@ export default async function UsuariosPage({
                 {rows.map((row) => {
                   const isSelf = row.id === user.id;
                   const isLastOwner = row.active && row.role === "OWNER" && activeOwners <= 1;
+                  const status = !row.active
+                    ? { tone: "neutral" as const, label: "Inativo" }
+                    : row.emailVerifiedAt
+                      ? { tone: "success" as const, label: "Ativo" }
+                      : { tone: "warning" as const, label: "Convite pendente" };
 
                   return (
                     <tr key={row.id} className="hover:bg-ink-50">
@@ -132,11 +138,7 @@ export default async function UsuariosPage({
                           <Badge tone={ROLE_TONES[row.role]}>
                             {ROLE_LABELS[row.role]}
                           </Badge>
-                          {row.active ? (
-                            <Badge tone="success">Ativo</Badge>
-                          ) : (
-                            <Badge tone="neutral">Inativo</Badge>
-                          )}
+                          <Badge tone={status.tone}>{status.label}</Badge>
                         </div>
                       </td>
                       <td className="hidden px-3 py-3 sm:table-cell sm:px-5">
@@ -145,11 +147,7 @@ export default async function UsuariosPage({
                         </Badge>
                       </td>
                       <td className="hidden px-3 py-3 sm:table-cell sm:px-5">
-                        {row.active ? (
-                          <Badge tone="success">Ativo</Badge>
-                        ) : (
-                          <Badge tone="neutral">Inativo</Badge>
-                        )}
+                        <Badge tone={status.tone}>{status.label}</Badge>
                       </td>
                       <td className="hidden px-3 py-3 text-ink-600 2xl:table-cell 2xl:px-5">
                         {formatDateTime(row.createdAt)}

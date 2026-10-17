@@ -5,13 +5,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { users, type UserRole } from "@/db/schema";
+import { authTokens, users, type UserRole } from "@/db/schema";
 import {
   getCurrentUser,
   hashPassword,
   requireAdmin,
   verifyPassword,
 } from "@/lib/auth";
+import { sendPasswordEmail } from "@/lib/auth-emails";
+import { issueAuthToken } from "@/lib/auth-tokens";
+import { canSendEmail } from "@/lib/mail";
 import {
   fieldErrorsFrom,
   formToObject,
@@ -122,7 +125,15 @@ export async function createTeamMemberAction(
     };
   }
 
-  const { name, email, password, role } = parsed.data;
+  const { name, email, role } = parsed.data;
+
+  if (!canSendEmail()) {
+    return {
+      ok: false,
+      message:
+        "O envio de e-mails não está configurado. Peça ao suporte para ativar o serviço.",
+    };
+  }
 
   // O e-mail é único globalmente (índice em lower(email)), não só na loja.
   const [existing] = await db()
@@ -133,17 +144,20 @@ export async function createTeamMemberAction(
 
   if (existing) return emailExists();
 
-  const passwordHash = await hashPassword(password);
-
+  let member: { id: string };
   try {
-    await db().insert(users).values({
-      storeId: user.storeId,
-      name,
-      email,
-      passwordHash,
-      role,
-      active: true,
-    });
+    [member] = await db()
+      .insert(users)
+      .values({
+        storeId: user.storeId,
+        name,
+        email,
+        passwordHash: null,
+        emailVerifiedAt: null,
+        role,
+        active: true,
+      })
+      .returning({ id: users.id });
   } catch (error) {
     // Fallback: corrida entre a checagem acima e o insert.
     if (isDuplicateEmailError(error)) return emailExists();
@@ -151,7 +165,43 @@ export async function createTeamMemberAction(
   }
 
   revalidatePath("/usuarios");
-  return { ok: true, message: "Membro adicionado." };
+
+  try {
+    const issued = await issueAuthToken({
+      userId: member.id,
+      type: "SET_PASSWORD",
+      skipCooldown: true,
+    });
+    if (issued) {
+      const sent = await sendPasswordEmail({
+        to: email,
+        name,
+        storeName: user.storeName,
+        token: issued.token,
+        type: "SET_PASSWORD",
+        invite: true,
+      });
+      if (!sent) {
+        return {
+          ok: true,
+          message:
+            "Membro criado, mas não foi possível enviar o convite. Peça para usar 'Esqueci minha senha' com este e-mail.",
+        };
+      }
+    }
+  } catch (error) {
+    console.error("Falha ao enviar convite:", error);
+    return {
+      ok: true,
+      message:
+        "Membro criado, mas não foi possível enviar o convite. Peça para usar 'Esqueci minha senha' com este e-mail.",
+    };
+  }
+
+  return {
+    ok: true,
+    message: `Convite enviado para ${email}. A pessoa cria a senha pelo link.`,
+  };
 }
 
 export async function updateTeamMemberAction(
@@ -243,10 +293,21 @@ export async function resetUserPasswordAction(
 
   const passwordHash = await hashPassword(password);
 
-  await db()
-    .update(users)
-    .set({ passwordHash, updatedAt: new Date() })
-    .where(and(eq(users.id, id), eq(users.storeId, user.storeId)));
+  await db().transaction(async (tx) => {
+    await tx
+      .update(users)
+      .set({
+        passwordHash,
+        // O admin definiu a senha diretamente; não faz sentido manter o login
+        // bloqueado esperando uma confirmação que já foi suprida por ele.
+        emailVerifiedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(users.id, id), eq(users.storeId, user.storeId)));
+
+    // Links pendentes permitiriam trocar a senha recém-definida.
+    await tx.delete(authTokens).where(eq(authTokens.userId, id));
+  });
 
   revalidatePath("/usuarios");
   return { ok: true, message: `Senha de ${member.name} redefinida.` };
@@ -300,7 +361,9 @@ export async function changeOwnPasswordAction(
     .where(and(eq(users.id, user.id), eq(users.storeId, user.storeId)))
     .limit(1);
 
-  if (!row) return { ok: false, message: "Usuário não encontrado." };
+  if (!row || !row.passwordHash) {
+    return { ok: false, message: "Usuário não encontrado." };
+  }
 
   const valid = await verifyPassword(currentPassword, row.passwordHash);
   if (!valid) {
