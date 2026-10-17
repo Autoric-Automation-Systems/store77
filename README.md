@@ -49,7 +49,8 @@ Alternativas:
 - `npm run db:studio` — navegador visual dos dados.
 - **Sem CLI:** cole o conteúdo de cada arquivo de [`drizzle/`](./drizzle) no SQL
   Editor do Neon, **na ordem** (`0000_initial.sql`, `0001_terms_accepted.sql`,
-  `0002_*`).
+  `0002_*`). Depois rode `npm run db:migrate` uma vez: ele percebe que os objetos
+  já existem, registra as migrações no histórico e não tenta recriar nada.
 
 ### 1.4 (Opcional) Dados de demonstração
 
@@ -254,6 +255,17 @@ imagens antigas continuam abrindo.
 pooler. Se a variável não estiver no ambiente do deploy, ele cai para
 `DATABASE_URL` e avisa no log. Sem nenhuma das duas, o build para com a mensagem
 "Nenhuma connection string encontrada".
+
+Se o banco já tinha tabelas criadas à mão (SQL colado no editor do Neon, por
+exemplo) e não tem a tabela `drizzle.__drizzle_migrations`, o runner reaproveita
+os objetos existentes (`42P07`, `42701`, `42710`) e registra as migrações como
+aplicadas, em vez de abortar o build com "already exists". Depois ele confere se
+`users` e `auth_tokens` têm as colunas usadas pela autenticação; se faltar
+alguma, o build falha nomeando a coluna, porque a tela quebraria em runtime.
+
+Se algum build precisar passar sem banco (Preview sem `DATABASE_URL`, por
+exemplo), defina `SKIP_DB_MIGRATIONS=1` no ambiente: o passo é ignorado e o log
+registra isso.
 
 **Deployment Protection pode barrar visitantes (não é tarefa de deploy).** É uma
 configuração de acesso, em **Settings → Deployment Protection**. Quando ativa, o
