@@ -15,7 +15,7 @@ import { COMPANY, PRODUCT, PRODUCT_HOST } from "@/lib/legal";
 export const metadata: Metadata = {
   title: "Ajuda",
   description:
-    "Guia rápido do Store77: primeiros passos, módulos, papéis de acesso e perguntas frequentes.",
+    "Guia rápido do Store77: primeiros passos, contas e acesso, módulos, papéis e perguntas frequentes.",
 };
 
 const FIRST_STEPS = [
@@ -48,6 +48,37 @@ const FIRST_STEPS = [
     text: "Em Vitrine online, escolha o link, suba a logo, escreva o hero e defina a paleta. A página já está no ar: basta compartilhar o endereço com seus clientes.",
     href: "/vitrine",
     cta: "Abrir Vitrine online",
+  },
+];
+
+const ACCESS_TOPICS = [
+  {
+    title: "Entrar pela primeira vez",
+    text: "O cadastro da loja e o convite da equipe não pedem senha na hora: mandam um link para o seu e-mail. Abra o link, crie a senha e você entra direto no painel. Criar a senha por esse link é o que confirma que o endereço é seu — não existe uma etapa separada de confirmação. O link vale 48 horas e só pode ser usado uma vez.",
+  },
+  {
+    title: "Conferir a senha antes de salvar",
+    text: "Todo campo de senha tem um ícone de olho no canto direito. Clique para mostrar o que digitou, clique de novo para esconder. Ajuda a pegar erro de digitação no celular, onde o teclado erra com frequência. O botão só muda a exibição na tela: não guarda, não envia e não altera a senha.",
+  },
+  {
+    title: "Esqueci minha senha",
+    text: "Na tela de login, clique em “Esqueci minha senha” e informe o e-mail da conta. O link chega em instantes e vale 1 hora. Ao salvar a nova senha, você entra direto no painel e o link deixa de funcionar.",
+  },
+  {
+    title: "O link do convite não chegou",
+    text: "Use “Reenviar confirmação” na tela de login, com o mesmo e-mail do convite. O link novo vale 48 horas e substitui o anterior. Esse formulário só envia e-mail para contas que ainda não têm senha ou não confirmaram o endereço; se a conta já está ativa, o caminho é “Esqueci minha senha”.",
+  },
+  {
+    title: "Um pedido por minuto",
+    text: "Para não encher a caixa de entrada, o sistema gera um link novo apenas 1 minuto depois do anterior. Se você pedir duas vezes seguidas, o segundo pedido não gera e-mail: use o link que já chegou.",
+  },
+  {
+    title: "A resposta é sempre a mesma",
+    text: "Depois do pedido, a mensagem é sempre “se este e-mail estiver cadastrado, você receberá um link”, mesmo quando o endereço não existe na base. Isso é proteção: sem essa resposta única, qualquer pessoa poderia testar e-mails para descobrir quem tem conta. O texto neutro não significa que o envio falhou.",
+  },
+  {
+    title: "Trocar a senha com a conta aberta",
+    text: "Em Equipe → Minha senha, informe a senha atual e defina a nova. Proprietário e gerente também podem redefinir a senha de outra pessoa em Equipe — útil quando alguém perde o acesso, mas lembre que quem redefine passa a conhecer a senha daquela conta. Vendedor não tem acesso à tela de Equipe; se esquecer a senha, usa “Esqueci minha senha” no login.",
   },
 ];
 
@@ -132,7 +163,7 @@ const MODULES = [
     body: [
       "Convide as pessoas da loja e defina o papel de cada uma. O convite chega por e-mail e a própria pessoa cria a senha pelo link.",
       "Enquanto a pessoa não cria a senha, ela aparece como “Convite pendente” na lista. O convite vale por 48 horas e só pode ser usado uma vez.",
-      "Todos os membros podem trocar a própria senha em Equipe → Minha senha.",
+      "Proprietário e gerente trocam a própria senha em Equipe → Minha senha. Quem é vendedor não abre essa tela: usa “Esqueci minha senha” na página de login.",
       "O sistema impede remover, desativar ou rebaixar o último proprietário ativo, para que ninguém perca o acesso à loja.",
       "Redefinir a senha de alguém é útil quando a pessoa perde o acesso, mas exige que ela confie em quem redefine.",
     ],
@@ -196,15 +227,19 @@ const FAQ = [
   },
   {
     q: "Esqueci minha senha. Como recupero?",
-    a: "Na tela de login, use “Esqueci minha senha” e informe o e-mail da conta. Você recebe um link válido por 1 hora para definir uma nova senha. Se o cadastro ainda não foi confirmado, use “Reenviar confirmação” ou peça um novo convite a alguém da gestão.",
+    a: "Na tela de login, use “Esqueci minha senha” e informe o e-mail da conta. Você recebe um link válido por 1 hora, que só pode ser usado uma vez: ao salvar a nova senha, você já entra no painel. Se você nunca chegou a criar a senha — cadastro novo ou convite pendente —, use “Reenviar confirmação”.",
   },
   {
     q: "Não recebi o e-mail para criar minha senha. E agora?",
-    a: "Confira a caixa de spam e a aba Promoções. Se ainda não chegou, abra “Reenviar confirmação” na tela de login e informe o mesmo e-mail. O link vale por 48 horas e só pode ser usado uma vez.",
+    a: "Confira a caixa de spam e a aba Promoções. Se ainda não chegou, abra “Reenviar confirmação” na tela de login e informe o mesmo e-mail. O link vale 48 horas e só pode ser usado uma vez. Um pedido novo só é enviado 1 minuto depois do anterior, então não clique várias vezes seguidas: o segundo pedido não gera e-mail.",
   },
   {
     q: "Recebi um convite da equipe. Como começo a usar?",
-    a: "Abra o link do e-mail, crie uma senha com pelo menos 8 caracteres e confirme. Você entra direto no painel com o papel definido no convite. Se o link expirou, use “Reenviar confirmação” na tela de login com o e-mail do convite.",
+    a: "Abra o link do e-mail, crie uma senha entre 8 e 72 caracteres e confirme. Você entra direto no painel com o papel definido no convite. Se o link expirou, use “Reenviar confirmação” na tela de login com o e-mail do convite.",
+  },
+  {
+    q: "Dá para ver a senha que estou digitando?",
+    a: "Sim. Todo campo de senha tem um ícone de olho no canto direito: um clique mostra o texto, outro esconde. É útil para conferir antes de salvar, principalmente no celular. O ícone apenas muda a exibição na tela — a senha não é guardada nem enviada para lugar nenhum por causa disso.",
   },
 ];
 
@@ -233,13 +268,15 @@ export default function AjudaPage() {
         Como usar o {PRODUCT.name}
       </h1>
       <p className="mt-3 text-base text-ink-600">
-        Guia direto ao ponto: o caminho de implantação, o que cada módulo faz, quem
-        pode acessar o quê e as dúvidas mais comuns.
+        Guia direto ao ponto: o caminho de implantação, como entrar e recuperar a
+        senha, o que cada módulo faz, quem pode acessar o quê e as dúvidas mais
+        comuns.
       </p>
 
       <nav className="mt-8 flex flex-wrap gap-2">
         {[
           { href: "#primeiros-passos", label: "Primeiros passos" },
+          { href: "#acesso", label: "Contas e acesso" },
           { href: "#modulos", label: "Módulos" },
           { href: "#permissoes", label: "Permissões" },
           { href: "#perguntas", label: "Perguntas frequentes" },
@@ -283,6 +320,28 @@ export default function AjudaPage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section id="acesso" className="mt-12 scroll-mt-20">
+        <h2 className="text-xl font-bold tracking-tight text-ink-900">
+          Contas e acesso
+        </h2>
+        <p className="mt-2 text-sm text-ink-600">
+          Como entrar pela primeira vez, confirmar o e-mail e recuperar a senha.
+        </p>
+        <div className="mt-5 space-y-3">
+          {ACCESS_TOPICS.map((topic) => (
+            <div
+              key={topic.title}
+              className="rounded-xl border border-ink-200 bg-white px-5 py-4"
+            >
+              <p className="font-semibold text-ink-900">{topic.title}</p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-600">
+                {topic.text}
+              </p>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section id="modulos" className="mt-12 scroll-mt-20">
