@@ -39,6 +39,14 @@ export function ProductForm({
 }) {
   const [state, formAction] = useActionState(saveProductAction, initialState);
   const isEdit = Boolean(product?.id);
+  // O React limpa o formulário após submeter; `state.values` devolve o que foi
+  // digitado para que um erro de validação não apague o cadastro inteiro. Só
+  // usamos o eco quando ele é deste produto, para não vazar valores ao trocar
+  // de produto sem desmontar o componente.
+  const sent =
+    state.values && (state.values.id ?? "") === (product?.id ?? "")
+      ? state.values
+      : undefined;
 
   return (
     <form action={formAction} className="space-y-6">
@@ -60,7 +68,7 @@ export function ProductForm({
               name="code"
               required
               className="input"
-              defaultValue={product?.code ?? ""}
+              defaultValue={sent?.code ?? product?.code ?? ""}
               placeholder="CAM-001"
             />
           </Field>
@@ -70,7 +78,7 @@ export function ProductForm({
               id="barcode"
               name="barcode"
               className="input"
-              defaultValue={product?.barcode ?? ""}
+              defaultValue={sent?.barcode ?? product?.barcode ?? ""}
               placeholder="7891000000000"
             />
           </Field>
@@ -82,7 +90,7 @@ export function ProductForm({
                 name="name"
                 required
                 className="input"
-                defaultValue={product?.name ?? ""}
+                defaultValue={sent?.name ?? product?.name ?? ""}
                 placeholder="Camiseta básica algodão"
               />
             </Field>
@@ -93,7 +101,7 @@ export function ProductForm({
               id="categoryId"
               name="categoryId"
               className="input"
-              defaultValue={product?.categoryId ?? ""}
+              defaultValue={sent?.categoryId ?? product?.categoryId ?? ""}
             >
               <option value="">Sem categoria</option>
               {categories.map((category) => (
@@ -109,7 +117,7 @@ export function ProductForm({
               id="unit"
               name="unit"
               className="input"
-              defaultValue={product?.unit ?? "UN"}
+              defaultValue={sent?.unit ?? product?.unit ?? "UN"}
             >
               {UNITS.map((unit) => (
                 <option key={unit} value={unit}>
@@ -131,7 +139,7 @@ export function ProductForm({
                 name="description"
                 rows={4}
                 className="input"
-                defaultValue={product?.description ?? ""}
+                defaultValue={sent?.description ?? product?.description ?? ""}
               />
             </Field>
           </div>
@@ -155,7 +163,9 @@ export function ProductForm({
               name="priceCents"
               inputMode="decimal"
               className="input"
-              defaultValue={centsToInput(product?.priceCents ?? 0)}
+              defaultValue={
+                sent?.priceCents ?? centsToInput(product?.priceCents ?? 0)
+              }
               placeholder="0,00"
             />
           </Field>
@@ -166,7 +176,9 @@ export function ProductForm({
               name="costCents"
               inputMode="decimal"
               className="input"
-              defaultValue={centsToInput(product?.costCents ?? 0)}
+              defaultValue={
+                sent?.costCents ?? centsToInput(product?.costCents ?? 0)
+              }
               placeholder="0,00"
             />
           </Field>
@@ -188,7 +200,7 @@ export function ProductForm({
               min={0}
               step={1}
               className="input"
-              defaultValue={product?.quantity ?? 0}
+              defaultValue={sent?.quantity ?? product?.quantity ?? 0}
             />
           </Field>
 
@@ -205,7 +217,7 @@ export function ProductForm({
               min={0}
               step={1}
               className="input"
-              defaultValue={product?.minQuantity ?? 0}
+              defaultValue={sent?.minQuantity ?? product?.minQuantity ?? 0}
             />
           </Field>
 
@@ -220,7 +232,7 @@ export function ProductForm({
                 id="location"
                 name="location"
                 className="input"
-                defaultValue={product?.location ?? ""}
+                defaultValue={sent?.location ?? product?.location ?? ""}
               />
             </Field>
           </div>
@@ -229,7 +241,9 @@ export function ProductForm({
             <input
               type="checkbox"
               name="active"
-              defaultChecked={product?.active ?? true}
+              defaultChecked={
+                sent ? sent.active === "1" : (product?.active ?? true)
+              }
               className="size-4 rounded border-ink-300"
             />
             <span className="text-sm text-ink-700">

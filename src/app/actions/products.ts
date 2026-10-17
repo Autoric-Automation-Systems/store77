@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { categories, productImages, products } from "@/db/schema";
+import { isUniqueViolation } from "@/lib/db-errors";
 import { applyMovement, StockError } from "@/lib/stock";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import {
@@ -58,12 +59,36 @@ export async function saveProductAction(
   const raw = formToObject(formData);
   raw.images = parseImages(formData);
 
+  // Devolvido nas falhas: o React limpa o formulário após cada submissão.
+  const submitted = () => {
+    const value = (key: string) => {
+      const field = formData.get(key);
+      return typeof field === "string" ? field : "";
+    };
+    return {
+      id: value("id"),
+      code: value("code"),
+      barcode: value("barcode"),
+      name: value("name"),
+      categoryId: value("categoryId"),
+      unit: value("unit"),
+      description: value("description"),
+      priceCents: value("priceCents"),
+      costCents: value("costCents"),
+      quantity: value("quantity"),
+      minQuantity: value("minQuantity"),
+      location: value("location"),
+      active: formData.get("active") ? "1" : "",
+    };
+  };
+
   const parsed = productSchema.safeParse(raw);
   if (!parsed.success) {
     return {
       ok: false,
       message: "Verifique os campos destacados.",
       fieldErrors: fieldErrorsFrom(parsed.error),
+      values: submitted(),
     };
   }
 
@@ -74,6 +99,7 @@ export async function saveProductAction(
       ok: false,
       message: "Tipo/nicho inválido.",
       fieldErrors: { categoryId: "Selecione um tipo válido" },
+      values: submitted(),
     };
   }
 
@@ -102,7 +128,13 @@ export async function saveProductAction(
         )
         .limit(1);
 
-      if (!current) return { ok: false, message: "Produto não encontrado." };
+      if (!current) {
+        return {
+          ok: false,
+          message: "Produto não encontrado.",
+          values: submitted(),
+        };
+      }
 
       await db()
         .update(products)
@@ -178,16 +210,15 @@ export async function saveProductAction(
         ok: false,
         message: error.message,
         fieldErrors: { quantity: error.message },
+        values: submitted(),
       };
     }
-    if (
-      error instanceof Error &&
-      /products_store_code_key|duplicate key/i.test(error.message)
-    ) {
+    if (isUniqueViolation(error, "products_store_code_key")) {
       return {
         ok: false,
         message: "Já existe um produto com este código.",
         fieldErrors: { code: "Código já utilizado" },
+        values: submitted(),
       };
     }
     throw error;

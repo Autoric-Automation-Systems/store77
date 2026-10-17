@@ -14,6 +14,7 @@ import {
   stores,
 } from "@/db/schema";
 import { requireAdmin, requireUser } from "@/lib/auth";
+import { isUniqueViolation } from "@/lib/db-errors";
 import { formatBRL } from "@/lib/format";
 import { applyMovement, StockError } from "@/lib/stock";
 import {
@@ -221,10 +222,7 @@ export async function finalizeSaleAction(
     if (error instanceof StockError) {
       return { ok: false, message: error.message };
     }
-    if (
-      error instanceof Error &&
-      /sales_store_number_key|duplicate key/i.test(error.message)
-    ) {
+    if (isUniqueViolation(error, "sales_store_number_key")) {
       return {
         ok: false,
         message: "Não foi possível numerar a venda. Tente novamente.",

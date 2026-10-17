@@ -92,8 +92,16 @@ export const categorySchema = z.object({
 
 export const productSchema = z.object({
   id: z.string().uuid().optional(),
-  code: z.string().trim().min(1, "Informe o código").max(40),
-  name: z.string().trim().min(2, "Informe a descrição").max(160),
+  code: z
+    .string()
+    .trim()
+    .min(1, "Informe o código")
+    .max(40, "O código deve ter no máximo 40 caracteres"),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Informe a descrição")
+    .max(160, "A descrição deve ter no máximo 160 caracteres"),
   description: optionalText(2000),
   categoryId: z
     .string()
@@ -207,6 +215,12 @@ export type ActionState = {
   ok: boolean;
   message?: string;
   fieldErrors?: Record<string, string>;
+  /**
+   * Valores enviados, devolvidos quando o formulário falha. O React 19 limpa os
+   * campos não controlados depois de toda submissão; sem este eco o usuário
+   * perderia tudo o que digitou para corrigir um único erro.
+   */
+  values?: Record<string, string>;
 };
 
 export function fieldErrorsFrom(error: z.ZodError): Record<string, string> {

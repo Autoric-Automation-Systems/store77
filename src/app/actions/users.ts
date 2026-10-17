@@ -14,7 +14,7 @@ import {
 } from "@/lib/auth";
 import { sendPasswordEmail } from "@/lib/auth-emails";
 import { issueAuthToken } from "@/lib/auth-tokens";
-import { migrationHint } from "@/lib/db-errors";
+import { isUniqueViolation, migrationHint } from "@/lib/db-errors";
 import { canSendEmail } from "@/lib/mail";
 import {
   fieldErrorsFrom,
@@ -54,9 +54,7 @@ type MemberRow = {
 };
 
 function isDuplicateEmailError(error: unknown): boolean {
-  return (
-    error instanceof Error && /users_email_key|duplicate key/i.test(error.message)
-  );
+  return isUniqueViolation(error, "users_email_key");
 }
 
 function emailExists() {
