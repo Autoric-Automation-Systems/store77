@@ -94,14 +94,14 @@ export default async function ClientesPage({
     <>
       <PageHeader
         title="Clientes"
-        description="Cadastro de clientes com histórico de compras registradas no PDV."
+        description="Cadastro de clientes com total gasto e histórico de compras registradas no PDV."
       />
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <Card>
           <CardHeader
             title="Clientes cadastrados"
-            description="Últimos 100 clientes da loja."
+            description="Últimos 100 clientes da loja. Clique no nome para abrir a ficha com as compras realizadas."
             action={
               <form className="flex gap-2">
                 <input
@@ -131,7 +131,12 @@ export default async function ClientesPage({
                   className="flex flex-wrap items-center justify-between gap-4 px-3 py-3 sm:px-5"
                 >
                   <div className="min-w-0">
-                    <p className="font-semibold text-ink-900">{customer.name}</p>
+                    <Link
+                      href={`/clientes/${customer.id}`}
+                      className="font-semibold text-brand-700 hover:underline"
+                    >
+                      {customer.name}
+                    </Link>
                     <p className="text-xs text-ink-500">
                       {[customer.phone, customer.document, customer.email]
                         .filter(Boolean)

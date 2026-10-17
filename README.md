@@ -79,9 +79,10 @@ Sem conta ainda? `/cadastro` cria a loja e o usuário proprietário em um passo.
 | `/estoque/movimentacoes` | Estoque | Entradas, saídas e ajustes com saldo resultante e histórico auditável. |
 | `/estoque/categorias` | Estoque | Tipos de produto e nichos da loja (usados nos carrosséis da vitrine). |
 | `/caixa` | Caixa | PDV com carrinho, desconto, cliente e forma de pagamento. |
-| `/caixa/vendas` | Caixa | Vendas realizadas e cancelamento (devolve estoque e estorna o caixa). |
+| `/caixa/vendas` | Caixa | Vendas realizadas, itens de cada venda na própria lista e cancelamento (devolve estoque e estorna o caixa). |
 | `/caixa/sessoes` | Caixa | Abertura/fechamento de turno, sangria, suprimento e conferência de valores. |
-| `/clientes` | Caixa | Cadastro de clientes com histórico de compras. |
+| `/clientes` | Caixa | Cadastro de clientes com quantidade de compras e total gasto. |
+| `/clientes/[id]` | Caixa | Ficha do cliente: ticket médio, última compra, dados de contato e as vendas vinculadas. |
 | `/financeiro` | Financeiro | Contas a pagar/receber, baixa, vencidos e receita de vendas. |
 | `/vitrine` | Vitrine | Configuração da landing page: link, logo, hero, textos, paleta e contato. |
 | `/usuarios` | Equipe | Membros, papéis, redefinição de senha. |

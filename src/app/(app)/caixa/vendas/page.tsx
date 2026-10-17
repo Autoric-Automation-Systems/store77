@@ -1,34 +1,12 @@
 import Link from "next/link";
-import { and, desc, eq, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { customers, saleItems, sales, users } from "@/db/schema";
-import { cancelSaleAction } from "@/app/actions/sales";
 import { isAdminRole, requireUser } from "@/lib/auth";
-import { formatBRL, formatDateTime, formatDateTimeShort } from "@/lib/format";
-import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
-import { SubmitButton } from "@/components/submit-button";
+import { Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
+import { SalesTable, type SaleItemRow, type SaleRow } from "./sales-table";
 
 export const metadata = { title: "Vendas" };
-
-const STATUS_LABELS = {
-  ABERTA: "Aberta",
-  PAGA: "Paga",
-  CANCELADA: "Cancelada",
-} as const;
-
-const STATUS_TONES = {
-  ABERTA: "info",
-  PAGA: "success",
-  CANCELADA: "danger",
-} as const;
-
-const PAYMENT_LABELS = {
-  DINHEIRO: "Dinheiro",
-  PIX: "Pix",
-  DEBITO: "Débito",
-  CREDITO: "Crédito",
-  OUTRO: "Outro",
-} as const;
 
 export default async function VendasPage({
   searchParams,
@@ -50,11 +28,12 @@ export default async function VendasPage({
       number: sales.number,
       createdAt: sales.createdAt,
       status: sales.status,
+      subtotalCents: sales.subtotalCents,
+      discountCents: sales.discountCents,
       totalCents: sales.totalCents,
       paymentMethod: sales.paymentMethod,
       customerName: customers.name,
       sellerName: users.name,
-      itemCount: sql<number>`(select count(*) from ${saleItems} where ${saleItems.saleId} = ${sales.id})::int`,
     })
     .from(sales)
     .leftJoin(customers, eq(customers.id, sales.customerId))
@@ -62,6 +41,48 @@ export default async function VendasPage({
     .where(and(...filters))
     .orderBy(desc(sales.createdAt))
     .limit(100);
+
+  // Os itens das vendas listadas vêm em uma segunda consulta: assim qualquer
+  // venda abre os produtos na própria lista, sem uma ida ao banco por clique.
+  const items = rows.length
+    ? await db()
+        .select({
+          id: saleItems.id,
+          saleId: saleItems.saleId,
+          code: saleItems.code,
+          name: saleItems.name,
+          quantity: saleItems.quantity,
+          unitPriceCents: saleItems.unitPriceCents,
+          totalCents: saleItems.totalCents,
+        })
+        .from(saleItems)
+        .where(
+          inArray(
+            saleItems.saleId,
+            rows.map((row) => row.id),
+          ),
+        )
+        .orderBy(asc(saleItems.name))
+    : [];
+
+  const itemsBySale = new Map<string, SaleItemRow[]>();
+  for (const item of items) {
+    const list = itemsBySale.get(item.saleId) ?? [];
+    list.push({
+      id: item.id,
+      code: item.code,
+      name: item.name,
+      quantity: item.quantity,
+      unitPriceCents: item.unitPriceCents,
+      totalCents: item.totalCents,
+    });
+    itemsBySale.set(item.saleId, list);
+  }
+
+  const saleRows: SaleRow[] = rows.map((row) => ({
+    ...row,
+    items: itemsBySale.get(row.id) ?? [],
+  }));
 
   return (
     <>
@@ -78,6 +99,7 @@ export default async function VendasPage({
       <Card>
         <CardHeader
           title="Histórico de vendas"
+          description="Abra os itens para ver os produtos de cada venda sem sair da lista."
           action={
             <form className="flex gap-2">
               <select
@@ -97,89 +119,13 @@ export default async function VendasPage({
           }
         />
 
-        {rows.length === 0 ? (
+        {saleRows.length === 0 ? (
           <EmptyState
             title="Nenhuma venda encontrada"
             description="Finalize uma venda no PDV para vê-la aqui."
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-ink-200 text-sm">
-              <thead className="table-head">
-                <tr>
-                  <th className="px-3 py-3 sm:px-5">Venda</th>
-                  <th className="hidden px-3 py-3 lg:table-cell lg:px-5">Cliente</th>
-                  <th className="hidden px-3 py-3 lg:table-cell lg:px-5">Vendedor</th>
-                  <th className="hidden px-3 py-3 text-right lg:table-cell lg:px-5">
-                    Itens
-                  </th>
-                  <th className="px-3 py-3 text-right sm:px-5">Total</th>
-                  <th className="hidden px-3 py-3 lg:table-cell lg:px-5">
-                    Pagamento
-                  </th>
-                  <th className="hidden px-3 py-3 sm:table-cell sm:px-5">Status</th>
-                  <th className="px-3 py-3 sm:px-5" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink-100">
-                {rows.map((sale) => (
-                  <tr key={sale.id} className="hover:bg-ink-50">
-                    <td className="whitespace-nowrap px-3 py-3 sm:px-5">
-                      <Link
-                        href={`/caixa/vendas/${sale.id}`}
-                        className="font-semibold text-brand-700 hover:underline"
-                      >
-                        #{sale.number}
-                      </Link>
-                      <span className="block text-xs text-ink-500">
-                        <span className="sm:hidden">
-                          {formatDateTimeShort(sale.createdAt)}
-                        </span>
-                        <span className="hidden sm:inline">
-                          {formatDateTime(sale.createdAt)}
-                        </span>
-                      </span>
-                    </td>
-                    <td className="hidden px-3 py-3 text-ink-700 lg:table-cell lg:px-5">
-                      {sale.customerName ?? "Consumidor final"}
-                    </td>
-                    <td className="hidden px-3 py-3 text-ink-500 lg:table-cell lg:px-5">
-                      {sale.sellerName ?? "—"}
-                    </td>
-                    <td className="hidden px-3 py-3 text-right text-ink-600 lg:table-cell lg:px-5">
-                      {sale.itemCount}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right font-semibold sm:px-5">
-                      {formatBRL(sale.totalCents)}
-                    </td>
-                    <td className="hidden px-3 py-3 text-ink-500 lg:table-cell lg:px-5">
-                      {sale.paymentMethod
-                        ? PAYMENT_LABELS[sale.paymentMethod]
-                        : "—"}
-                    </td>
-                    <td className="hidden px-3 py-3 sm:table-cell sm:px-5">
-                      <Badge tone={STATUS_TONES[sale.status]}>
-                        {STATUS_LABELS[sale.status]}
-                      </Badge>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 sm:px-5 text-right">
-                      {isAdmin && sale.status === "PAGA" ? (
-                        <form action={cancelSaleAction}>
-                          <input type="hidden" name="id" value={sale.id} />
-                          <SubmitButton
-                            className="btn btn-danger px-3 py-1.5 text-xs"
-                            pendingLabel="Cancelando..."
-                          >
-                            Cancelar venda
-                          </SubmitButton>
-                        </form>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <SalesTable rows={saleRows} isAdmin={isAdmin} />
         )}
       </Card>
     </>

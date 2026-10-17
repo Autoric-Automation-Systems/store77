@@ -82,6 +82,7 @@ const MODULES = [
       "O fluxo é: abrir a sessão de caixa → vender no PDV → fazer sangrias ou suprimentos pelo turno → fechar a sessão conferindo o valor.",
       "No PDV, busque por nome ou código, monte o carrinho, aplique desconto, escolha o cliente e a forma de pagamento. O preço vem sempre do cadastro, nunca do carrinho.",
       "Só venda em dinheiro entra automaticamente como movimento na sessão de caixa. Pix, débito e crédito ficam registrados na venda para conferência.",
+      "Em Vendas, cada linha abre a lista de produtos daquela venda ali mesmo, sem sair da tela; o número da venda continua levando à ficha completa.",
       "Vendas não geram lançamento no Financeiro: a receita é lida direto das vendas, evitando contagem dupla.",
       "Cancelar uma venda devolve os itens ao estoque e estorna o valor no caixa. A ação é restrita a proprietário e gerente.",
       "No fechamento, o sistema compara o valor que você contou com o esperado (fundo + entradas − saídas − sangrias + suprimentos) e mostra a diferença.",
@@ -93,6 +94,8 @@ const MODULES = [
     title: "Clientes",
     body: [
       "Cadastre clientes para vincular vendas e acompanhar quantas compras e quanto cada um já gastou.",
+      "Clicar no nome abre a ficha do cliente: ticket médio, última compra, dados de contato e a lista das compras realizadas, com link para cada venda.",
+      "Só venda paga entra na quantidade e no total gasto; vendas abertas e canceladas aparecem na lista com o status, mas ficam fora da soma.",
       "A busca procura por nome, telefone e documento.",
       "Excluir um cliente mantém o histórico: as vendas passam a aparecer sem vínculo, em vez de serem apagadas.",
     ],
