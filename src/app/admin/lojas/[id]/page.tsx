@@ -99,7 +99,7 @@ export default async function AdminStorePage({
         title={store.name}
         description={`/${store.slug} · criada em ${formatDate(store.createdAt)}`}
         action={
-          <Link href="/admin" className="btn btn-secondary">
+          <Link href="/admin/lojas" className="btn btn-secondary">
             Voltar
           </Link>
         }

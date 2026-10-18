@@ -95,8 +95,11 @@ Sem conta ainda? `/cadastro` cria a loja e o usuário proprietário em um passo.
 | `/vitrine` | Vitrine | Configuração da landing page: link, logo, hero, textos, paleta e contato. |
 | `/usuarios` | Equipe | Membros, papéis, convite por e-mail, assentos do plano e redefinição de senha. |
 | `/assinatura` | Assinatura | Plano atual, uso, adicionais, faturas e contratação. Só o proprietário altera. |
-| `/admin` | Interno | Painel da plataforma: MRR, testes, cortesias, inadimplência e lista de lojas. |
+| `/admin` | Interno | Painel da plataforma: MRR, testes, afiliados, repasses e atalhos para cada seção. |
+| `/admin/lojas` | Interno | Lojas e cobrança: MRR, testes, cortesias, inadimplência e lista de lojas. |
 | `/admin/lojas/[id]` | Interno | Detalhe da loja: assinatura, eventos, faturas, cortesia e troca de plano. |
+| `/admin/planos` | Interno | Catálogo em vigor: preço, limites, adicionais e prazos de cobrança. |
+| `/admin/afiliados` | Interno | Cadastros, indicações, comissões e fila de repasse por Pix. |
 | `/cadastro` | Autenticação | Criação da loja; o e-mail é confirmado e a senha é criada por link. |
 | `/esqueci-senha` | Autenticação | Solicitação de link para redefinir a senha. |
 | `/definir-senha/[token]` | Autenticação | Criação/redefinição de senha a partir do link enviado por e-mail. |

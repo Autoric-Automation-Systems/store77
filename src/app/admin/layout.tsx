@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { logoutAction } from "@/app/actions/auth";
+import { AdminMobileNav, AdminSidebar } from "@/components/admin-nav";
 import { Brand } from "@/components/brand";
 import { requirePlatformAdmin } from "@/lib/platform";
 import { ROLE_LABELS } from "@/lib/roles";
@@ -16,9 +17,10 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-ink-100">
-      <header className="border-b border-ink-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-30 border-b border-ink-200 bg-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-2">
+            <AdminMobileNav />
             <Brand href="/admin" className="h-8" />
             <span className="badge bg-ink-900 text-white">Interno</span>
           </div>
@@ -37,9 +39,11 @@ export default async function AdminLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl space-y-5 px-4 py-6 sm:px-6">
-        {children}
-      </main>
+
+      <div className="mx-auto flex max-w-7xl gap-6 px-4 py-6 sm:px-6">
+        <AdminSidebar />
+        <main className="min-w-0 flex-1 space-y-5">{children}</main>
+      </div>
     </div>
   );
 }

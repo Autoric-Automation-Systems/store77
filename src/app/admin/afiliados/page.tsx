@@ -56,8 +56,8 @@ export default async function AdminAffiliatesPage({
         title="Afiliados"
         description="Cadastros, indicações e comissões do programa."
         action={
-          <Link href="/admin" className="btn btn-secondary">
-            Cobrança
+          <Link href="/admin/lojas" className="btn btn-secondary">
+            Lojas
           </Link>
         }
       />

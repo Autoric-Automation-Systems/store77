@@ -27,7 +27,7 @@ function backTo(storeId: string, message: string): never {
 function readStoreId(formData: FormData): string {
   const storeId = String(formData.get("storeId") ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(storeId)) {
-    redirect("/admin?erro=loja-invalida");
+    redirect("/admin/lojas?erro=loja-invalida");
   }
   return storeId;
 }
@@ -61,6 +61,7 @@ export async function grantAction(formData: FormData): Promise<void> {
     excludeFromMetrics: formData.get("excludeFromMetrics") === "on",
   });
 
+  revalidatePath("/admin/lojas");
   revalidatePath("/admin");
   revalidatePath(`/admin/lojas/${storeId}`);
   revalidatePath("/assinatura");
@@ -75,6 +76,7 @@ export async function revokeAction(formData: FormData): Promise<void> {
 
   await revokeComplimentary({ storeId, reason, actorUserId: admin.id });
 
+  revalidatePath("/admin/lojas");
   revalidatePath("/admin");
   revalidatePath(`/admin/lojas/${storeId}`);
   revalidatePath("/assinatura");
