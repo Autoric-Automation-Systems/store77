@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { setAffiliateStatusAction } from "@/app/actions/admin-affiliates";
+import {
+  regenerateAffiliateCodeAction,
+  setAffiliateStatusAction,
+} from "@/app/actions/admin-affiliates";
 import { CopyField } from "@/components/copy-field";
 import { Alert, Badge, Card, CardHeader, PageHeader, Stat } from "@/components/ui";
 import {
   adminAffiliateDetail,
   AFFILIATE_STATUS_LABELS,
   COMMISSION_STAGE_LABELS,
+  isShortAffiliateCode,
   referralLink,
 } from "@/lib/affiliates";
 import { formatDocument } from "@/lib/document";
@@ -72,6 +76,11 @@ export default async function AdminAffiliatePage({
 
       {ok === "status" ? (
         <Alert tone="success">Situação do afiliado atualizada.</Alert>
+      ) : null}
+      {ok === "codigo" ? (
+        <Alert tone="success">
+          Novo código gerado. O link antigo não vale mais.
+        </Alert>
       ) : null}
       {erro ? (
         <Alert tone="danger">Não foi possível atualizar a situação.</Alert>
@@ -166,6 +175,23 @@ export default async function AdminAffiliatePage({
                 label="Link do afiliado"
               />
             </div>
+            {isShortAffiliateCode(affiliate.code) ? null : (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <p className="text-xs text-amber-800">
+                  Código antigo, derivado do nome. Gerar um novo código curto
+                  quebra o link já divulgado.
+                </p>
+                <form action={regenerateAffiliateCodeAction} className="mt-2">
+                  <input type="hidden" name="affiliateId" value={affiliate.id} />
+                  <button
+                    type="submit"
+                    className="btn btn-secondary px-3 py-1.5 text-xs"
+                  >
+                    Gerar código curto
+                  </button>
+                </form>
+              </div>
+            )}
             <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-ink-500">
               Situação
             </p>

@@ -12,7 +12,6 @@ import {
 import { affiliateCookieToken } from "./affiliate-cookies";
 import { resolveAccess } from "./billing/access";
 import { verifyAffiliateToken } from "./affiliate-session";
-import { slugify } from "./slug";
 import { appBaseUrl } from "./url";
 
 /** Afiliado ativo por 6 meses sem nenhuma indicação é removido. */
@@ -101,12 +100,25 @@ export function referralSignupHref(code: string): string {
   return `/cadastro?ref=${encodeURIComponent(code)}`;
 }
 
-/** Código curto e legível, derivado do nome: "maria-silva-4f2a". */
-export async function generateAffiliateCode(name: string): Promise<string> {
-  const base = slugify(name).slice(0, 28) || "afiliado";
-  for (let attempt = 0; attempt < 6; attempt += 1) {
-    const suffix = Math.random().toString(36).slice(2, 6).padEnd(4, "0");
-    const candidate = `${base}-${suffix}`;
+/**
+ * Código de indicação curto: 8 caracteres. O alfabeto exclui vogais (o código
+ * não forma palavra nem sugere o nome do afiliado) e os pares ambíguos
+ * 0/o/1/l/i — sobra o que dá para ditar no telefone e caber em bio.
+ * "cadastro", "entrar" e "painel" são as rotas fixas da área; nenhuma delas é
+ * representável aqui, porque todas usam vogais.
+ */
+const CODE_ALPHABET = "23456789bcdfghjkmnpqrstvwxz";
+const CODE_LENGTH = 8;
+
+function randomAffiliateCode(): string {
+  const drawn = crypto.getRandomValues(new Uint32Array(CODE_LENGTH));
+  return Array.from(drawn, (n) => CODE_ALPHABET[n % CODE_ALPHABET.length]).join("");
+}
+
+export async function generateAffiliateCode(): Promise<string> {
+  // Com 30^8 combinações a colisão é improvável, mas o índice único decide.
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const candidate = randomAffiliateCode();
     const [taken] = await db()
       .select({ id: affiliates.id })
       .from(affiliates)
@@ -114,7 +126,15 @@ export async function generateAffiliateCode(name: string): Promise<string> {
       .limit(1);
     if (!taken) return candidate;
   }
-  return `${base}-${Date.now().toString(36)}`;
+  return randomAffiliateCode();
+}
+
+/** Códigos antigos (derivados do nome) continuam válidos, mas não são curtos. */
+export function isShortAffiliateCode(code: string): boolean {
+  return (
+    code.length === CODE_LENGTH &&
+    [...code].every((letter) => CODE_ALPHABET.includes(letter))
+  );
 }
 
 export async function findAffiliateByEmail(email: string) {

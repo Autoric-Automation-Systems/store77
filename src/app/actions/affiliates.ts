@@ -49,7 +49,7 @@ export async function registerAffiliateAction(
     };
   }
 
-  const code = await generateAffiliateCode(name);
+  const code = await generateAffiliateCode();
   const now = new Date();
 
   let affiliateId: string;
