@@ -76,7 +76,32 @@ export type ProviderEvent =
       externalId: string;
       providerSubscriptionId: string;
       raw: unknown;
+    }
+  | {
+      kind: "transfer.done" | "transfer.failed";
+      externalId: string;
+      providerTransferId: string;
+      externalReference: string | null;
+      status: string;
+      raw: unknown;
     };
+
+export type PixKeyType = "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP";
+
+export type TransferInput = {
+  amountCents: number;
+  pixAddressKey: string;
+  pixAddressKeyType: PixKeyType;
+  description: string;
+  /** Id do repasse: permite reconciliar o webhook e evita envio duplo. */
+  externalReference: string;
+};
+
+export type TransferResult = {
+  providerTransferId: string;
+  status: string;
+  endToEndId: string | null;
+};
 
 export interface BillingProvider {
   readonly name: "ASAAS" | "STRIPE";
@@ -88,6 +113,7 @@ export interface BillingProvider {
     amountCents: number,
     interval: BillingIntervalName,
   ): Promise<void>;
+  createTransfer(input: TransferInput): Promise<TransferResult>;
   /** `false` = assinatura inexistente no gateway (já cancelada, por exemplo). */
   verifyWebhookToken(token: string | null): boolean;
   parseWebhook(body: unknown): ProviderEvent[];

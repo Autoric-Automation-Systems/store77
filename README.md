@@ -473,6 +473,8 @@ landing page do cliente final.
   não dado editável no banco; a fatura guarda o valor cobrado. O provedor inicial
   é o Asaas; `billing_provider_name` guarda `ASAAS`, `STRIPE` e `MANUAL`. A comissão
   de afiliado é apurada no webhook, com retenção de 30 dias para cobrir estorno.
+  O repasse é um Pix de `/transfers`, na chave do afiliado, que só vira "pago"
+  quando chega `TRANSFER_DONE`; falha devolve as comissões para a fila.
 - **Vendas são faixa de uso, assentos são limite firme.** Travar o PDV por volume
   custa mais que o upgrade: o sistema avisa em 80% e 100% e sugere pacote.
 

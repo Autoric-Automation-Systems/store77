@@ -1,5 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
+import { confirmPayout, failPayout } from "@/lib/affiliate-payouts";
 import {
   affiliateCommissions,
   affiliateReferrals,
@@ -444,7 +445,10 @@ async function recordCommission(input: {
 
   await db()
     .update(affiliateReferrals)
-    .set({ convertedAt: sql`coalesce(${affiliateReferrals.convertedAt}, ${input.paidAt})` })
+    .set({
+      // Data como texto: dentro de `sql` cru o driver não converte Date.
+      convertedAt: sql`coalesce(${affiliateReferrals.convertedAt}, ${input.paidAt.toISOString()}::timestamptz)`,
+    })
     .where(eq(affiliateReferrals.storeId, input.storeId));
 }
 
@@ -587,6 +591,19 @@ async function applyInvoiceStatus(
 /** Aplica um evento já autenticado. Idempotência fica em `payment_events`. */
 export async function applyProviderEvent(event: ProviderEvent): Promise<void> {
   switch (event.kind) {
+    case "transfer.done":
+      await confirmPayout({
+        providerTransferId: event.providerTransferId,
+        externalReference: event.externalReference,
+      });
+      return;
+    case "transfer.failed":
+      await failPayout({
+        providerTransferId: event.providerTransferId,
+        externalReference: event.externalReference,
+        reason: "Transferência recusada ou cancelada pelo gateway.",
+      });
+      return;
     case "invoice.paid":
       await applyInvoicePaid(event);
       return;

@@ -4,7 +4,12 @@ import type {
   CheckoutInput,
   CheckoutResult,
   ProviderEvent,
+  TransferInput,
+  TransferResult,
 } from "./provider";
+// Com extensão: este módulo também roda sob `node --test`, que não resolve
+// imports relativos sem extensão.
+import { normalizePixKey } from "../pix.ts";
 
 /**
  * Adapter do Asaas (API v3).
@@ -42,10 +47,19 @@ type AsaasPayment = {
   externalReference?: string | null;
 };
 
+type AsaasTransfer = {
+  id: string;
+  status?: string | null;
+  value?: number;
+  externalReference?: string | null;
+  endToEndIdentifier?: string | null;
+};
+
 type AsaasWebhook = {
   event?: string;
   payment?: AsaasPayment;
   subscription?: { id?: string; externalReference?: string | null };
+  transfer?: AsaasTransfer;
 };
 
 const PAID_EVENTS = new Set([
@@ -59,6 +73,13 @@ const OVERDUE_EVENTS = new Set(["PAYMENT_OVERDUE"]);
 const CANCELED_SUBSCRIPTION_EVENTS = new Set([
   "SUBSCRIPTION_DELETED",
   "SUBSCRIPTION_INACTIVATED",
+]);
+
+/** Só estes dois encerram o repasse: o resto é etapa intermediária. */
+const TRANSFER_DONE_EVENTS = new Set(["TRANSFER_DONE"]);
+const TRANSFER_FAILED_EVENTS = new Set([
+  "TRANSFER_FAILED",
+  "TRANSFER_CANCELLED",
 ]);
 
 const REVERSED_EVENTS = new Set([
@@ -198,6 +219,28 @@ class AsaasProvider implements BillingProvider {
     });
   }
 
+  async createTransfer(input: TransferInput): Promise<TransferResult> {
+    const transfer = await this.request<AsaasTransfer>("/transfers", {
+      method: "POST",
+      body: {
+        value: input.amountCents / 100,
+        pixAddressKey: normalizePixKey(
+          input.pixAddressKey,
+          input.pixAddressKeyType,
+        ),
+        pixAddressKeyType: input.pixAddressKeyType,
+        description: input.description.slice(0, 140),
+        externalReference: input.externalReference,
+      },
+    });
+
+    return {
+      providerTransferId: transfer.id,
+      status: transfer.status ?? "PENDING",
+      endToEndId: transfer.endToEndIdentifier ?? null,
+    };
+  }
+
   verifyWebhookToken(token: string | null): boolean {
     if (!this.webhookToken) return false;
     return token === this.webhookToken;
@@ -219,6 +262,28 @@ class AsaasProvider implements BillingProvider {
           kind: "subscription.canceled",
           externalId: `${event}:${id}`,
           providerSubscriptionId: id,
+          raw: payload,
+        },
+      ];
+    }
+
+    const transfer = payload.transfer;
+    if (transfer?.id && event.startsWith("TRANSFER_")) {
+      if (
+        !TRANSFER_DONE_EVENTS.has(event) &&
+        !TRANSFER_FAILED_EVENTS.has(event)
+      ) {
+        return [];
+      }
+      return [
+        {
+          kind: TRANSFER_DONE_EVENTS.has(event)
+            ? "transfer.done"
+            : "transfer.failed",
+          externalId: `${event}:${transfer.id}`,
+          providerTransferId: transfer.id,
+          externalReference: transfer.externalReference ?? null,
+          status: transfer.status ?? event,
           raw: payload,
         },
       ];

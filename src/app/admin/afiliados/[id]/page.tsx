@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   regenerateAffiliateCodeAction,
+  retryAffiliatePayoutAction,
+  sendAffiliatePayoutAction,
   setAffiliateStatusAction,
 } from "@/app/actions/admin-affiliates";
 import { CopyField } from "@/components/copy-field";
@@ -13,6 +15,7 @@ import {
   isShortAffiliateCode,
   referralLink,
 } from "@/lib/affiliates";
+import { pixKeyTypeOf } from "@/lib/pix";
 import { formatDocument } from "@/lib/document";
 import {
   COMMISSION_HOLD_DAYS,
@@ -51,11 +54,16 @@ export default async function AdminAffiliatePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ ok?: string; erro?: string }>;
+  searchParams: Promise<{
+    ok?: string;
+    erro?: string;
+    valor?: string;
+    detalhe?: string;
+  }>;
 }) {
   await requirePlatformAdmin();
   const { id } = await params;
-  const { ok, erro } = await searchParams;
+  const { ok, erro, valor, detalhe } = await searchParams;
 
   const detail = await adminAffiliateDetail(id);
   if (!detail) notFound();
@@ -82,7 +90,18 @@ export default async function AdminAffiliatePage({
           Novo código gerado. O link antigo não vale mais.
         </Alert>
       ) : null}
-      {erro ? (
+      {ok === "repasse" ? (
+        <Alert tone="success">
+          Pix de {formatBRL(Number(valor ?? 0))} enviado. O repasse fica
+          pendente até o gateway confirmar a transferência.
+        </Alert>
+      ) : null}
+      {erro === "repasse" ? (
+        <Alert tone="danger">
+          {detalhe || "Não foi possível enviar o Pix."}
+        </Alert>
+      ) : null}
+      {erro && erro !== "repasse" ? (
         <Alert tone="danger">Não foi possível atualizar a situação.</Alert>
       ) : null}
 
@@ -112,6 +131,21 @@ export default async function AdminAffiliatePage({
           tone="neutral"
         />
       </div>
+
+      <PayoutCard
+        affiliateId={affiliate.id}
+        affiliateName={affiliate.name}
+        availableCents={totals.DISPONIVEL}
+        availableCount={
+          commissions.filter((item) => item.stage === "DISPONIVEL").length
+        }
+        pixKey={affiliate.pixKey}
+        pixKeyTypeLabel={
+          affiliate.pixKey
+            ? pixKeyTypeOf(affiliate.pixKey, affiliate.document)
+            : null
+        }
+      />
 
       <Card className="card-pad">
         <div className="grid gap-5 sm:grid-cols-2">
@@ -377,14 +411,125 @@ export default async function AdminAffiliatePage({
                   {formatDate(payout.periodStart)} a {formatDate(payout.periodEnd)}
                 </span>
                 <span className="text-ink-600">{formatBRL(payout.amountCents)}</span>
-                <Badge tone={payout.status === "PAGO" ? "success" : "warning"}>
-                  {payout.status === "PAGO" ? "Pago" : "Pendente"}
+                <Badge
+                  tone={
+                    payout.status === "PAGO"
+                      ? "success"
+                      : payout.status === "CANCELADO"
+                        ? "danger"
+                        : "warning"
+                  }
+                >
+                  {payout.status === "PAGO"
+                    ? "Pago"
+                    : payout.status === "CANCELADO"
+                      ? "Cancelado"
+                      : "Aguardando gateway"}
                 </Badge>
+                {payout.paidAt ? (
+                  <span className="text-xs text-ink-500">
+                    {formatDateTime(payout.paidAt)}
+                  </span>
+                ) : null}
+                {payout.failureReason ? (
+                  <p className="w-full text-xs text-red-600">
+                    {payout.failureReason}
+                  </p>
+                ) : null}
+                {payout.status !== "PAGO" &&
+                !payout.providerTransferId &&
+                payout.failureReason ? (
+                  <form action={retryAffiliatePayoutAction}>
+                    <input type="hidden" name="affiliateId" value={affiliate.id} />
+                    <input type="hidden" name="payoutId" value={payout.id} />
+                    <input
+                      type="hidden"
+                      name="returnTo"
+                      value={`/admin/afiliados/${affiliate.id}`}
+                    />
+                    <button
+                      type="submit"
+                      className="btn btn-secondary px-3 py-1.5 text-xs"
+                    >
+                      Reenviar Pix
+                    </button>
+                  </form>
+                ) : null}
               </li>
             ))}
           </ul>
         )}
       </Card>
     </div>
+  );
+}
+
+function PayoutCard({
+  affiliateId,
+  affiliateName,
+  availableCents,
+  availableCount,
+  pixKey,
+  pixKeyTypeLabel,
+}: {
+  affiliateId: string;
+  affiliateName: string;
+  availableCents: number;
+  availableCount: number;
+  pixKey: string | null;
+  pixKeyTypeLabel: string | null;
+}) {
+  const canPay = availableCents > 0 && Boolean(pixKey);
+
+  return (
+    <Card className="card-pad">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+            Repasse por Pix
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-ink-900">
+            {formatBRL(availableCents)}
+          </p>
+          <p className="mt-1 text-sm text-ink-500">
+            {availableCount === 0
+              ? "Nenhuma comissão liberada para repasse."
+              : `${availableCount} comissão(ões) liberada(s) neste lote.`}
+          </p>
+          <p className="mt-2 break-all text-sm text-ink-600">
+            Chave Pix:{" "}
+            <strong className="text-ink-800">{pixKey ?? "não informada"}</strong>
+            {pixKeyTypeLabel ? ` (${pixKeyTypeLabel})` : ""}
+          </p>
+          {!pixKey ? (
+            <p className="mt-2 text-xs text-amber-700">
+              Sem chave Pix não há como enviar. Peça a chave ao afiliado e
+              atualize o cadastro antes de pagar.
+            </p>
+          ) : null}
+        </div>
+
+        <form action={sendAffiliatePayoutAction} className="shrink-0">
+          <input type="hidden" name="affiliateId" value={affiliateId} />
+          <input
+            type="hidden"
+            name="returnTo"
+            value={`/admin/afiliados/${affiliateId}`}
+          />
+          <button
+            type="submit"
+            disabled={!canPay}
+            className="btn btn-primary disabled:cursor-not-allowed disabled:opacity-50"
+            title={
+              canPay
+                ? `Enviar ${formatBRL(availableCents)} para ${affiliateName}`
+                : "Sem saldo liberado ou sem chave Pix"
+            }
+          >
+            Enviar Pix de {formatBRL(availableCents)}
+          </button>
+        </form>
+      </div>
+    </Card>
   );
 }

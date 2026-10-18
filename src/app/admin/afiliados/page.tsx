@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { purgeStaleAffiliatesAction } from "@/app/actions/admin-affiliates";
+import {
+  purgeStaleAffiliatesAction,
+  sendAffiliatePayoutAction,
+} from "@/app/actions/admin-affiliates";
 import { Alert, Badge, Card, CardHeader, PageHeader, Stat } from "@/components/ui";
 import {
   adminAffiliateList,
@@ -7,6 +10,7 @@ import {
   STALE_AFFILIATE_MONTHS,
   staleAffiliates,
 } from "@/lib/affiliates";
+import { payoutQueue } from "@/lib/affiliate-payouts";
 import { formatBRL, formatDate } from "@/lib/format";
 import { requirePlatformAdmin } from "@/lib/platform";
 
@@ -22,14 +26,21 @@ const STATUS_TONES = {
 export default async function AdminAffiliatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ removidos?: string; erro?: string }>;
+  searchParams: Promise<{
+    removidos?: string;
+    erro?: string;
+    ok?: string;
+    valor?: string;
+    detalhe?: string;
+  }>;
 }) {
   await requirePlatformAdmin();
-  const { removidos, erro } = await searchParams;
+  const { removidos, erro, ok, valor, detalhe } = await searchParams;
 
-  const [affiliates, stale] = await Promise.all([
+  const [affiliates, stale, queue] = await Promise.all([
     adminAffiliateList(),
     staleAffiliates(),
+    payoutQueue(),
   ]);
 
   const active = affiliates.filter((item) => item.status === "ATIVO");
@@ -58,7 +69,20 @@ export default async function AdminAffiliatesPage({
             : `${removidos} cadastro(s) sem indicação removido(s).`}
         </Alert>
       ) : null}
-      {erro ? <Alert tone="danger">Não foi possível concluir a ação.</Alert> : null}
+      {ok === "repasse" ? (
+        <Alert tone="success">
+          Pix de {formatBRL(Number(valor ?? 0))} enviado. Aguardando a
+          confirmação do gateway.
+        </Alert>
+      ) : null}
+      {erro === "repasse" ? (
+        <Alert tone="danger">
+          {detalhe || "Não foi possível enviar o Pix."}
+        </Alert>
+      ) : null}
+      {erro && erro !== "repasse" ? (
+        <Alert tone="danger">Não foi possível concluir a ação.</Alert>
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
@@ -86,6 +110,94 @@ export default async function AdminAffiliatesPage({
           tone="success"
         />
       </div>
+
+      <Card>
+        <CardHeader
+          title="Fila de repasse"
+          description="Comissões liberadas depois da retenção. O Pix é enviado na chave cadastrada."
+        />
+        {queue.length === 0 ? (
+          <p className="px-5 py-6 text-sm text-ink-500">
+            Nenhum afiliado com comissão liberada no momento.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b border-ink-200 text-left text-xs uppercase tracking-wide text-ink-500">
+                <tr>
+                  <th className="px-5 py-3 sm:px-6">Afiliado</th>
+                  <th className="px-3 py-3">Chave Pix</th>
+                  <th className="px-3 py-3 text-right">Comissões</th>
+                  <th className="px-3 py-3 text-right">Disponível</th>
+                  <th className="px-5 py-3 sm:px-6 text-right">Repasse</th>
+                </tr>
+              </thead>
+              <tbody>
+                {queue.map((item) => (
+                  <tr
+                    key={item.affiliateId}
+                    className="border-b border-ink-100 last:border-0"
+                  >
+                    <td className="px-5 py-3 sm:px-6">
+                      <Link
+                        href={`/admin/afiliados/${item.affiliateId}`}
+                        className="font-medium text-brand-700 hover:underline"
+                      >
+                        {item.name}
+                      </Link>
+                      <p className="text-xs text-ink-500">{item.email}</p>
+                    </td>
+                    <td className="px-3 py-3">
+                      {item.pixKey ? (
+                        <span className="break-all text-xs text-ink-700">
+                          {item.pixKey}
+                          {item.pixKeyType ? (
+                            <span className="text-ink-400"> · {item.pixKeyType}</span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-amber-700">sem chave</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 text-right text-ink-600">
+                      {item.commissionCount}
+                    </td>
+                    <td className="px-3 py-3 text-right font-medium text-ink-800">
+                      {formatBRL(item.availableCents)}
+                    </td>
+                    <td className="px-5 py-3 text-right sm:px-6">
+                      <form action={sendAffiliatePayoutAction}>
+                        <input
+                          type="hidden"
+                          name="affiliateId"
+                          value={item.affiliateId}
+                        />
+                        <input
+                          type="hidden"
+                          name="returnTo"
+                          value="/admin/afiliados"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!item.pixKey}
+                          className="btn btn-secondary px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                          title={
+                            item.pixKey
+                              ? `Enviar ${formatBRL(item.availableCents)} por Pix`
+                              : "Afiliado sem chave Pix"
+                          }
+                        >
+                          Enviar Pix
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
       <Card>
         <CardHeader

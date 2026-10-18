@@ -329,14 +329,22 @@ export async function adminAffiliateList() {
       })
       .from(affiliateReferrals)
       .groupBy(affiliateReferrals.affiliateId),
+    // `PENDENTE` guarda dois estados que o relógio separa: em retenção e já
+    // liberado. Agrupar por isso evita que a lista diga que há R$ 0 disponível
+    // enquanto a fila de repasse mostra saldo.
     db()
       .select({
         affiliateId: affiliateCommissions.affiliateId,
         status: affiliateCommissions.status,
+        released: sql<boolean>`${affiliateCommissions.availableAt} <= now()`,
         amount: sql<number>`coalesce(sum(${affiliateCommissions.amountCents}), 0)::int`,
       })
       .from(affiliateCommissions)
-      .groupBy(affiliateCommissions.affiliateId, affiliateCommissions.status),
+      .groupBy(
+        affiliateCommissions.affiliateId,
+        affiliateCommissions.status,
+        sql`${affiliateCommissions.availableAt} <= now()`,
+      ),
   ]);
 
   const referralMap = new Map(referralRows.map((row) => [row.affiliateId, row]));
@@ -346,17 +354,21 @@ export async function adminAffiliateList() {
     const commissions = commissionRows.filter(
       (row) => row.affiliateId === affiliate.id,
     );
-    const byStatus = (status: CommissionStage) =>
-      commissions.find((row) => row.status === status)?.amount ?? 0;
+    const sumWhere = (predicate: (row: (typeof commissions)[number]) => boolean) =>
+      commissions.filter(predicate).reduce((total, row) => total + row.amount, 0);
 
     return {
       ...affiliate,
       referralCount: referral?.total ?? 0,
       convertedCount: referral?.converted ?? 0,
-      pendingCents: byStatus("PENDENTE"),
-      availableCents: byStatus("DISPONIVEL"),
-      paidCents: byStatus("PAGO"),
-      refundedCents: byStatus("ESTORNADO"),
+      pendingCents: sumWhere(
+        (row) => row.status === "PENDENTE" && !row.released,
+      ),
+      availableCents: sumWhere(
+        (row) => row.status === "PENDENTE" && row.released,
+      ),
+      paidCents: sumWhere((row) => row.status === "PAGO"),
+      refundedCents: sumWhere((row) => row.status === "ESTORNADO"),
     };
   });
 }

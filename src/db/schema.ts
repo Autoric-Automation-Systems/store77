@@ -676,6 +676,7 @@ export const affiliates = pgTable(
     email: text("email").notNull(),
     document: text("document"),
     pixKey: text("pix_key"),
+    pixKeyType: text("pix_key_type"),
     code: text("code").notNull(),
     // Afiliado tem login próprio: não é usuário de loja, então a senha vive
     // aqui e a sessão usa cookie separado.
@@ -723,6 +724,35 @@ export const affiliateReferrals = pgTable(
   ],
 );
 
+export const affiliatePayouts = pgTable(
+  "affiliate_payouts",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    affiliateId: uuid("affiliate_id")
+      .notNull()
+      .references(() => affiliates.id, { onDelete: "cascade" }),
+    periodStart: date("period_start").notNull(),
+    periodEnd: date("period_end").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    status: payoutStatus("status").notNull().default("PENDENTE"),
+    // A criação da transferência no gateway não é a conclusão: o Pix pode
+    // falhar ou ser cancelado depois. O status só vira PAGO com o webhook.
+    providerTransferId: text("provider_transfer_id"),
+    pixEndToEndId: text("pix_end_to_end_id"),
+    failureReason: text("failure_reason"),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    // Um repasse por período fechado: o índice é a trava contra envio duplo.
+    uniqueIndex("affiliate_payouts_period_key").on(
+      table.affiliateId,
+      table.periodStart,
+    ),
+    index("affiliate_payouts_status_idx").on(table.status),
+  ],
+);
+
 export const affiliateCommissions = pgTable(
   "affiliate_commissions",
   {
@@ -741,6 +771,10 @@ export const affiliateCommissions = pgTable(
     amountCents: integer("amount_cents").notNull(),
     status: commissionStatus("status").notNull().default("PENDENTE"),
     availableAt: timestamp("available_at", { withTimezone: true }),
+    // Preenchido no envio do Pix: amarra a comissão ao repasse que a pagou.
+    payoutId: uuid("payout_id").references(() => affiliatePayouts.id, {
+      onDelete: "set null",
+    }),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     ...timestamps,
   },
@@ -752,29 +786,6 @@ export const affiliateCommissions = pgTable(
     index("affiliate_commissions_affiliate_idx").on(
       table.affiliateId,
       table.status,
-    ),
-  ],
-);
-
-export const affiliatePayouts = pgTable(
-  "affiliate_payouts",
-  {
-    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-    affiliateId: uuid("affiliate_id")
-      .notNull()
-      .references(() => affiliates.id, { onDelete: "cascade" }),
-    periodStart: date("period_start").notNull(),
-    periodEnd: date("period_end").notNull(),
-    amountCents: integer("amount_cents").notNull(),
-    status: payoutStatus("status").notNull().default("PENDENTE"),
-    pixEndToEndId: text("pix_end_to_end_id"),
-    paidAt: timestamp("paid_at", { withTimezone: true }),
-    ...timestamps,
-  },
-  (table) => [
-    uniqueIndex("affiliate_payouts_period_key").on(
-      table.affiliateId,
-      table.periodStart,
     ),
   ],
 );
