@@ -405,6 +405,13 @@ entrou. Consequências:
 - o usuário precisa ser uma conta ativa e com e-mail confirmado, o que já é
   exigido no login.
 
+Quem está na lista vê o grupo **Plataforma → Administração interna** no menu
+lateral do app. A visibilidade usa `isPlatformAdminEmail()`, que lê só a
+variável (sem query, porque o menu é montado em toda página); a autorização
+continua em `requirePlatformAdmin()`, no layout e em cada action de `/admin`.
+Remover o e-mail da variável faz o item desaparecer do menu e as ações
+passarem a redirecionar.
+
 > Os textos foram redigidos como base técnica e cobrem os pontos que a LGPD e a
 > prática de SaaS exigem, mas **não substituem revisão jurídica**. Peça a um
 > advogado para validar cláusulas de responsabilidade e foro antes de tratar o

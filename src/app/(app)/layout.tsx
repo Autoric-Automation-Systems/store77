@@ -4,6 +4,7 @@ import { BillingBanner } from "@/components/billing-banner";
 import { Brand } from "@/components/brand";
 import { ROLE_LABELS, requireUser } from "@/lib/auth";
 import { getStoreAccess } from "@/lib/billing/entitlements";
+import { isPlatformAdminEmail } from "@/lib/platform-allowlist";
 
 export default async function AppLayout({
   children,
@@ -12,13 +13,18 @@ export default async function AppLayout({
 }) {
   const user = await requireUser();
   const overview = await getStoreAccess(user.storeId);
+  const platformAdmin = isPlatformAdminEmail(user.email);
 
   return (
     <div className="flex min-h-screen flex-col bg-ink-100">
       <header className="sticky top-0 z-30 border-b border-ink-200 bg-white">
         <div className="flex items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <MobileNav role={user.role} userName={user.name} />
+            <MobileNav
+              role={user.role}
+              userName={user.name}
+              platformAdmin={platformAdmin}
+            />
             <Brand href="/dashboard" className="h-8 sm:h-9" />
             <span className="hidden h-6 w-px bg-ink-200 sm:block" />
             <span className="hidden truncate text-sm font-medium text-ink-600 sm:block">
@@ -44,7 +50,7 @@ export default async function AppLayout({
       </header>
 
       <div className="flex flex-1 items-stretch">
-        <AppSidebar role={user.role} />
+        <AppSidebar role={user.role} platformAdmin={platformAdmin} />
         <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
           <div className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
             <BillingBanner overview={overview} />

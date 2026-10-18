@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { platformAdmins } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
 import type { SessionUser } from "@/lib/roles";
+import { isPlatformAdminEmail } from "./platform-allowlist";
 
 /**
  * Quem opera o painel interno.
@@ -15,18 +16,11 @@ import type { SessionUser } from "@/lib/roles";
  *
  * Consequência operacional: com a variável vazia, ninguém acessa /admin.
  */
-function bootstrapEmails(): string[] {
-  return (process.env.PLATFORM_ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
-}
-
 export async function isPlatformAdmin(
   userId: string,
   email: string,
 ): Promise<boolean> {
-  const allowlisted = bootstrapEmails().includes(email.toLowerCase());
+  const allowlisted = isPlatformAdminEmail(email);
 
   const [recorded] = await db()
     .select({ userId: platformAdmins.userId })

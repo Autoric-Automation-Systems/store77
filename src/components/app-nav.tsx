@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   Receipt,
+  ShieldAlert,
   ShieldCheck,
   ShoppingCart,
   Tags,
@@ -34,7 +35,9 @@ type NavItem = {
   icon: LucideIcon;
 };
 
-const GROUPS: { title: string; items: NavItem[] }[] = [
+type NavGroup = { title: string; items: NavItem[]; separated?: boolean };
+
+const GROUPS: NavGroup[] = [
   {
     title: "Visão geral",
     items: [{ href: "/dashboard", label: "Painel", icon: LayoutDashboard }],
@@ -76,14 +79,30 @@ const GROUPS: { title: string; items: NavItem[] }[] = [
 ];
 
 /**
+ * Grupo da operação da plataforma, não da loja: só aparece para quem está em
+ * `PLATFORM_ADMIN_EMAILS`. Fica no fim e em grupo próprio para não se confundir
+ * com as telas do lojista.
+ */
+const PLATFORM_GROUP: NavGroup = {
+  title: "Plataforma",
+  separated: true,
+  items: [
+    { href: "/admin", label: "Administração interna", icon: ShieldAlert },
+  ],
+};
+
+/**
  * Quais itens são restritos vem de `isAdminOnlyPath`, a mesma lista que espelha
  * os `requireAdmin()` das páginas — assim o menu não pode divergir.
  */
-function visibleGroups(role: UserRole) {
-  return GROUPS.map((group) => ({
-    ...group,
-    items: group.items.filter((item) => isPathAllowed(role, item.href)),
-  })).filter((group) => group.items.length > 0);
+function visibleGroups(role: UserRole, platformAdmin: boolean) {
+  const groups = platformAdmin ? [...GROUPS, PLATFORM_GROUP] : GROUPS;
+  return groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => isPathAllowed(role, item.href)),
+    }))
+    .filter((group) => group.items.length > 0);
 }
 
 /** O href mais específico que casa com a URL atual define o item ativo. */
@@ -129,9 +148,15 @@ function Credits() {
 }
 
 /** Menu vertical, somente no desktop. */
-export function AppSidebar({ role }: { role: UserRole }) {
+export function AppSidebar({
+  role,
+  platformAdmin,
+}: {
+  role: UserRole;
+  platformAdmin: boolean;
+}) {
   const pathname = usePathname();
-  const groups = visibleGroups(role);
+  const groups = visibleGroups(role, platformAdmin);
   const hrefs = groups.flatMap((group) => group.items.map((item) => item.href));
   const active = activeHref(pathname, hrefs);
 
@@ -139,7 +164,10 @@ export function AppSidebar({ role }: { role: UserRole }) {
     <nav className="hidden w-64 shrink-0 flex-col border-r border-ink-200 bg-white px-4 py-6 lg:flex">
       <div className="flex flex-1 flex-col gap-6">
         {groups.map((group) => (
-          <div key={group.title}>
+          <div
+            key={group.title}
+            className={group.separated ? "border-t border-ink-200 pt-5" : undefined}
+          >
             <p className="px-3 text-xs font-semibold uppercase tracking-wide text-ink-400">
               {group.title}
             </p>
@@ -178,9 +206,11 @@ export function AppSidebar({ role }: { role: UserRole }) {
 export function MobileNav({
   role,
   userName,
+  platformAdmin,
 }: {
   role: UserRole;
   userName: string;
+  platformAdmin: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -206,7 +236,7 @@ export function MobileNav({
     };
   }, [open]);
 
-  const groups = visibleGroups(role);
+  const groups = visibleGroups(role, platformAdmin);
   const hrefs = groups.flatMap((group) => group.items.map((item) => item.href));
   const active = activeHref(pathname, hrefs);
 
@@ -256,7 +286,12 @@ export function MobileNav({
 
             <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
               {groups.map((group) => (
-                <div key={group.title}>
+                <div
+                  key={group.title}
+                  className={
+                    group.separated ? "border-t border-ink-200 pt-4" : undefined
+                  }
+                >
                   <p className="px-3 text-xs font-semibold uppercase tracking-wide text-ink-400">
                     {group.title}
                   </p>
