@@ -84,6 +84,41 @@ const ACCESS_TOPICS = [
   },
 ];
 
+const AFFILIATE_TOPICS = [
+  {
+    title: "Cadastro imediato, sem análise",
+    text: "Em Afiliados → Criar cadastro, informe nome, e-mail, CPF ou CNPJ, chave Pix, senha e aceite os termos. O credenciamento é automático: ao concluir, você já entra na área do afiliado com o link ativo. Não há e-mail de aprovação nem prazo de análise.",
+  },
+  {
+    title: "Seu link é uma página de vendas",
+    text: "O link divulgado tem o formato www.store77.com.br/afiliados/seu-codigo e abre uma apresentação do Store77, não um formulário. O botão “Começar meu teste grátis” leva ao cadastro da loja com o seu código já embutido, então o vínculo é registrado na criação da conta.",
+  },
+  {
+    title: "Por que o link não é o /cadastro direto",
+    text: "Porque quem recebe uma indicação ainda não conhece o produto. A página de vendas explica o que o sistema faz e mantém um único botão de ação. Se você preferir, o endereço /cadastro?ref=seu-codigo também funciona e registra a indicação do mesmo jeito.",
+  },
+  {
+    title: "Janela de 90 dias",
+    text: "Ao abrir seu link, o navegador do visitante guarda o código por 90 dias. Ele pode comparar planos, sair e voltar depois: o cadastro continua vinculado a você. Passados os 90 dias, é necessário um novo clique no link.",
+  },
+  {
+    title: "Comissão e extrato",
+    text: "A comissão é de 25% sobre cada fatura efetivamente paga, por até 12 meses, contados da primeira fatura. Ela só nasce de fatura paga: teste grátis, cortesia e fatura estornada não geram comissão. A área do afiliado mostra loja, plano, situação da assinatura, valor da fatura e o estágio de cada comissão (em retenção, disponível, pago ou estornado).",
+  },
+  {
+    title: "Quando o valor fica disponível",
+    text: "Cada comissão fica retida por 30 dias após o pagamento da fatura, como proteção contra estorno e chargeback. Depois disso aparece como disponível. O repasse é feito por Pix até o dia 10 do mês seguinte, quando o saldo disponível alcança R$ 50,00; abaixo disso, acumula para o mês seguinte.",
+  },
+  {
+    title: "Perdi o acesso à área do afiliado",
+    text: "A área do afiliado tem login próprio, separado da conta da loja, em Afiliados → Entrar. Use o mesmo e-mail e senha do cadastro de afiliado. Se você também é lojista, o login da loja não abre essa área: são sessões diferentes de propósito.",
+  },
+  {
+    title: "Cadastro removido por inatividade",
+    text: "Um cadastro de afiliado sem nenhuma loja indicada por 6 meses é removido automaticamente. A remoção limpa o cadastro, não o histórico financeiro de lojas que você já indicou — comissões e repasses continuam registrados. Se voltar a divulgar antes do prazo, a conta permanece.",
+  },
+];
+
 const MODULES = [
   {
     id: "estoque",
@@ -271,6 +306,18 @@ const FAQ = [
     a: "Não de imediato. Até 7 dias o acesso é completo. Entre 7 e 30 dias, o PDV, o caixa e a vitrine continuam funcionando e só as funções de gestão ficam bloqueadas. Depois de 30 dias, a loja entra em somente leitura e a vitrine sai do ar. Nada é apagado e a reativação é imediata após o pagamento.",
   },
   {
+    q: "Como me torno afiliado do Store77?",
+    a: "Abra Afiliados → Criar cadastro e preencha nome, e-mail, CPF ou CNPJ, chave Pix e senha. O credenciamento é imediato: sem análise e sem espera por e-mail. Ao concluir, sua área já abre com o link de indicação pronto para divulgar.",
+  },
+  {
+    q: "O que acontece se eu ficar 6 meses sem indicar ninguém?",
+    a: "O cadastro é removido automaticamente quando completa 6 meses sem nenhuma loja indicada. Comissões e repasses de lojas que você já indicou continuam registrados. Basta divulgar antes desse prazo para a conta seguir ativa.",
+  },
+  {
+    q: "O login do afiliado é o mesmo da loja?",
+    a: "Não. A área do afiliado tem sessão própria, em Afiliados → Entrar, com o e-mail e a senha do cadastro de afiliado. O login da loja dá acesso ao painel da loja e não abre o extrato de comissões — e o contrário também vale.",
+  },
+  {
     q: "Dá para ver a senha que estou digitando?",
     a: "Sim. Todo campo de senha tem um ícone de olho no canto direito: um clique mostra o texto, outro esconde. É útil para conferir antes de salvar, principalmente no celular. O ícone apenas muda a exibição na tela — a senha não é guardada nem enviada para lugar nenhum por causa disso.",
   },
@@ -310,6 +357,7 @@ export default function AjudaPage() {
         {[
           { href: "#primeiros-passos", label: "Primeiros passos" },
           { href: "#plano", label: "Plano e cobrança" },
+          { href: "#afiliados", label: "Afiliados" },
           { href: "#acesso", label: "Contas e acesso" },
           { href: "#modulos", label: "Módulos" },
           { href: "#permissoes", label: "Permissões" },
@@ -414,6 +462,36 @@ export default function AjudaPage() {
           </Link>
           .
         </p>
+      </section>
+
+      <section id="afiliados" className="mt-12 scroll-mt-20">
+        <h2 className="text-xl font-bold tracking-tight text-ink-900">
+          Programa de afiliados
+        </h2>
+        <p className="mt-2 text-sm text-ink-600">
+          Como se credenciar, como o link funciona e quando a comissão é paga.
+        </p>
+        <div className="mt-5 space-y-3">
+          {AFFILIATE_TOPICS.map((topic) => (
+            <div
+              key={topic.title}
+              className="rounded-xl border border-ink-200 bg-white px-5 py-4"
+            >
+              <p className="font-semibold text-ink-900">{topic.title}</p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-600">
+                {topic.text}
+              </p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link href="/afiliados/cadastro" className="btn btn-primary">
+            Criar cadastro de afiliado
+          </Link>
+          <Link href="/afiliados" className="btn btn-secondary">
+            Regras do programa
+          </Link>
+        </div>
       </section>
 
       <section id="acesso" className="mt-12 scroll-mt-20">
@@ -569,8 +647,8 @@ export default function AjudaPage() {
             <Link href="/privacidade" className="btn btn-secondary">
               Política de Privacidade
             </Link>
-            <Link href="/afiliados" className="btn btn-secondary">
-              Programa de afiliados
+            <Link href="/afiliados/cadastro" className="btn btn-secondary">
+              Quero ser afiliado
             </Link>
           </div>
         </div>

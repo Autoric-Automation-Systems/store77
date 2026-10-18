@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidDocument, onlyDigits } from "./document";
 import { parseMoneyToCents } from "./format";
 import { slugify } from "./slug";
 
@@ -80,6 +81,44 @@ export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, "Informe a senha"),
 });
+
+/**
+ * Cadastro de afiliado: o próprio afiliado se credencia e recebe o link na
+ * hora. Documento e chave Pix são exigidos porque o repasse é por Pix e o
+ * documento é a contraparte fiscal.
+ */
+export const affiliateRegisterSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(3, "Informe seu nome completo")
+      .max(120, "Use no máximo 120 caracteres"),
+    email: emailSchema,
+    document: z
+      .string()
+      .trim()
+      .transform((value) => onlyDigits(value))
+      .refine(isValidDocument, "Informe um CPF ou CNPJ válido"),
+    pixKey: z
+      .string()
+      .trim()
+      .min(5, "Informe a chave Pix que vai receber os repasses")
+      .max(140, "Use no máximo 140 caracteres"),
+    notes: optionalText(600),
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Confirme a senha"),
+    acceptTerms: booleanField.refine(
+      (value) => value === true,
+      "É preciso aceitar os Termos de Uso e a Política de Privacidade",
+    ),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "As senhas não coincidem",
+  });
+
+export const affiliateLoginSchema = loginSchema;
 
 export const forgotPasswordSchema = z.object({
   email: emailSchema,

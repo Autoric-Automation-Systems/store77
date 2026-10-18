@@ -29,6 +29,13 @@
       "when": 1792288511604,
       "tag": "0003_billing",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792326521910,
+      "tag": "0004_affiliate_access",
+      "breakpoints": true
     }
   ]
 }

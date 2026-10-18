@@ -34,6 +34,9 @@ export async function verifySessionToken(
     const { payload } = await jwtVerify(token, getSecret(), {
       algorithms: ["HS256"],
     });
+    // Token de afiliado usa o mesmo segredo e outro cookie; marcar o tipo (e
+    // recusar qualquer tipo diferente de "user") impede a troca entre áreas.
+    if (payload.typ && payload.typ !== "user") return null;
     return typeof payload.sub === "string" ? payload.sub : null;
   } catch {
     return null;

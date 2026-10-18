@@ -21,13 +21,13 @@ export const metadata: Metadata = {
 const STEPS = [
   {
     icon: Link2,
-    title: "Receba seu link e código",
-    text: "O cadastro é feito pelo suporte, com seus dados e a forma de pagamento. Você recebe um código e um link de indicação para divulgar.",
+    title: "Cadastre-se e receba o link na hora",
+    text: "Você mesmo cria o cadastro com nome, CPF ou CNPJ, chave Pix e senha. O link de indicação aparece na tela seguinte, já pronto para divulgar — sem análise e sem e-mail de espera.",
   },
   {
     icon: BadgeCheck,
     title: "A loja se cadastra e testa",
-    text: "A loja indicada cria a conta, usa os 14 dias de teste e escolhe um plano. O vínculo é registrado no primeiro pagamento confirmado.",
+    text: "Quem clicar no seu link cai numa página de apresentação do Store77 e segue para o cadastro já vinculado a você. O vínculo é registrado na criação da loja, ainda durante o teste grátis.",
   },
   {
     icon: HandCoins,
@@ -36,8 +36,8 @@ const STEPS = [
   },
   {
     icon: Wallet,
-    title: "Receba por Pix",
-    text: "A comissão fica disponível depois do prazo de segurança e é paga por Pix no mês seguinte, com extrato enviado pelo suporte.",
+    title: "Acompanhe e receba por Pix",
+    text: "Sua área de afiliado mostra cada loja indicada, cada fatura e o extrato completo. A comissão fica disponível depois do prazo de segurança e é paga por Pix no mês seguinte.",
   },
 ];
 
@@ -137,9 +137,11 @@ export default function AfiliadosPage() {
           <div className="rounded-xl border border-ink-200 bg-white px-5 py-4">
             <p className="font-semibold text-ink-900">Janela de atribuição</p>
             <p className="mt-1">
-              A indicação vale quando a loja se cadastra pelo seu link ou informa o
-              seu código e contrata um plano em até 90 dias. Depois desse prazo, é
-              necessário um novo contato para registrar o vínculo.
+              A indicação vale quando a loja se cadastra pelo seu link em até 90
+              dias depois do clique. O sistema guarda o código no navegador do
+              visitante por esse período, então ele pode conhecer os planos,
+              voltar depois e se cadastrar — o vínculo continua sendo seu. Depois
+              de 90 dias, é preciso um novo clique no link.
             </p>
           </div>
           <div className="rounded-xl border border-ink-200 bg-white px-5 py-4">
@@ -190,23 +192,29 @@ export default function AfiliadosPage() {
             <ShieldCheck className="mt-0.5 size-5 shrink-0 text-brand-700" />
             <div className="text-sm leading-relaxed text-ink-700">
               <p className="font-semibold text-ink-900">
-                O credenciamento é feito pelo suporte
+                O credenciamento é imediato e você mesmo faz
               </p>
               <p className="mt-1">
-                Envie um e-mail com nome, CPF ou CNPJ, chave Pix e uma breve
-                descrição de como pretende divulgar. A análise leva até 3 dias
-                úteis. Contas aprovadas recebem o código e o link.
+                Preencha nome, e-mail, CPF ou CNPJ, chave Pix e senha. Não há
+                análise prévia: ao concluir, você já entra na sua área com o
+                link de indicação ativo. Um cadastro sem nenhuma indicação por 6
+                meses é removido automaticamente — divulgue para manter a conta
+                viva.
+              </p>
+              <p className="mt-2">
+                Já tem cadastro? Entre com o seu e-mail e senha para ver o
+                extrato.
               </p>
             </div>
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <a
-              href={`mailto:${COMPANY.contactEmail}?subject=Programa%20de%20afiliados%20Store77`}
-              className="btn btn-primary"
-            >
+            <Link href="/afiliados/cadastro" className="btn btn-primary">
               <Mail className="size-4" />
-              Quero ser afiliado
-            </a>
+              Criar cadastro de afiliado
+            </Link>
+            <Link href="/afiliados/entrar" className="btn btn-secondary">
+              Já sou afiliado
+            </Link>
             <Link href="/ajuda/planos" className="btn btn-secondary">
               Ver planos e preços
               <ArrowRight className="size-4" />

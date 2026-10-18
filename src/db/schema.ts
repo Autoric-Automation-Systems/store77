@@ -677,12 +677,17 @@ export const affiliates = pgTable(
     document: text("document"),
     pixKey: text("pix_key"),
     code: text("code").notNull(),
+    // Afiliado tem login próprio: não é usuário de loja, então a senha vive
+    // aqui e a sessão usa cookie separado.
+    passwordHash: text("password_hash"),
     status: affiliateStatus("status").notNull().default("PENDENTE"),
     // Basis points: 2500 = 25,00%. Inteiro evita erro de arredondamento.
     commissionRateBp: integer("commission_rate_bp").notNull().default(2500),
     commissionMonths: integer("commission_months").notNull().default(12),
     tier: text("tier").notNull().default("AFILIADO"),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
+    termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
+    lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
     notes: text("notes"),
     ...timestamps,
   },

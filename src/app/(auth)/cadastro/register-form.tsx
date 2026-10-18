@@ -9,7 +9,7 @@ import type { ActionState } from "@/lib/validation";
 
 const initialState: ActionState = { ok: false };
 
-export function RegisterForm() {
+export function RegisterForm({ refCode = "" }: { refCode?: string }) {
   const [state, formAction] = useActionState(registerStoreAction, initialState);
 
   return (
@@ -27,6 +27,7 @@ export function RegisterForm() {
       ) : null}
 
       <form action={formAction} className="mt-6 space-y-4">
+        {refCode ? <input type="hidden" name="ref" value={refCode} /> : null}
         <div>
           <label className="label" htmlFor="storeName">
             Nome da loja

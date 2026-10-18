@@ -1,6 +1,7 @@
 "use server";
 
 import { and, eq, sql } from "drizzle-orm";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { categories, stores, users, type AuthTokenType } from "@/db/schema";
@@ -17,6 +18,10 @@ import {
   issueAuthToken,
   setPasswordWithToken,
 } from "@/lib/auth-tokens";
+import {
+  attributeReferral,
+  findActiveAffiliateByCode,
+} from "@/lib/affiliates";
 import { migrationHint } from "@/lib/db-errors";
 import { canSendEmail } from "@/lib/mail";
 import { isReservedSlug, slugify } from "@/lib/slug";
@@ -104,6 +109,14 @@ export async function registerStoreAction(
 
   const { storeName, name, email } = parsed.data;
 
+  // Vínculo de afiliado: o campo oculto carrega o `?ref=` da página, e o cookie
+  // cobre quem clicou no link e só se cadastrou depois de navegar pelo site.
+  const refCode = (
+    String(formData.get("ref") ?? "") ||
+    (await cookies()).get("store77_ref")?.value ||
+    ""
+  ).trim();
+
   const [existing] = await db()
     .select({ id: users.id })
     .from(users)
@@ -134,6 +147,23 @@ export async function registerStoreAction(
   await db()
     .insert(categories)
     .values([{ storeId: store.id, name: "Geral", slug: "geral", kind: "TIPO" }]);
+
+  if (refCode) {
+    try {
+      const affiliate = await findActiveAffiliateByCode(refCode);
+      if (affiliate) {
+        await attributeReferral({
+          storeId: store.id,
+          affiliateId: affiliate.id,
+          code: affiliate.code,
+        });
+      }
+    } catch (error) {
+      // Indicação não pode derrubar o cadastro da loja: fica no log para
+      // conferência manual.
+      console.error("Falha ao registrar indicação de afiliado", error);
+    }
+  }
 
   const [owner] = await db()
     .insert(users)
