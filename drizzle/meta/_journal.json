@@ -22,6 +22,13 @@
       "when": 1792245365775,
       "tag": "0002_tan_ultron",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792288511604,
+      "tag": "0003_billing",
+      "breakpoints": true
     }
   ]
 }

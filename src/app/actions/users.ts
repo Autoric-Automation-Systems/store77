@@ -9,11 +9,15 @@ import { authTokens, users, type UserRole } from "@/db/schema";
 import {
   getCurrentUser,
   hashPassword,
-  requireAdmin,
+  requireAdminCapability,
   verifyPassword,
 } from "@/lib/auth";
 import { sendPasswordEmail } from "@/lib/auth-emails";
 import { issueAuthToken } from "@/lib/auth-tokens";
+import {
+  BillingError,
+  assertSeatAvailable,
+} from "@/lib/billing/entitlements";
 import { isUniqueViolation, migrationHint } from "@/lib/db-errors";
 import { canSendEmail } from "@/lib/mail";
 import {
@@ -32,7 +36,7 @@ const updateMemberSchema = z.object({
   id: z.string().uuid(),
   name: z.string().trim().min(2, "Informe o nome").max(120),
   phone: optionalText(40),
-  role: z.enum(["OWNER", "GERENTE", "VENDEDOR", "CLIENTE"]),
+  role: z.enum(["OWNER", "GERENTE", "VENDEDOR", "CAIXA", "CLIENTE"]),
 });
 
 const resetPasswordSchema = z.object({
@@ -113,7 +117,7 @@ export async function createTeamMemberAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("manageTeam");
 
   const parsed = teamMemberSchema.safeParse(formToObject(formData));
   if (!parsed.success) {
@@ -125,6 +129,18 @@ export async function createTeamMemberAction(
   }
 
   const { name, email, role } = parsed.data;
+
+  // Cliente da vitrine não ocupa assento; quem opera a loja ocupa.
+  if (role !== "CLIENTE") {
+    try {
+      await assertSeatAvailable(user.storeId);
+    } catch (error) {
+      if (error instanceof BillingError) {
+        return { ok: false, message: error.message };
+      }
+      throw error;
+    }
+  }
 
   if (!canSendEmail()) {
     return {
@@ -207,7 +223,7 @@ export async function updateTeamMemberAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("manageTeam");
 
   const parsed = updateMemberSchema.safeParse(formToObject(formData));
   if (!parsed.success) {
@@ -250,7 +266,7 @@ export async function updateTeamMemberAction(
 }
 
 export async function toggleUserActiveAction(formData: FormData): Promise<void> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("manageTeam");
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
@@ -262,6 +278,18 @@ export async function toggleUserActiveAction(formData: FormData): Promise<void> 
 
   // Regra 2: não desativar o último proprietário ativo.
   if (await isLastActiveOwner(user.storeId, member)) return;
+
+  // Reativar alguém volta a ocupar assento: mesma trava do convite.
+  if (!member.active && member.role !== "CLIENTE") {
+    try {
+      await assertSeatAvailable(user.storeId);
+    } catch (error) {
+      if (error instanceof BillingError) {
+        redirect("/usuarios?limite=1");
+      }
+      throw error;
+    }
+  }
 
   await db()
     .update(users)
@@ -275,7 +303,7 @@ export async function resetUserPasswordAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("manageTeam");
 
   const parsed = resetPasswordSchema.safeParse(formToObject(formData));
   if (!parsed.success) {
@@ -313,7 +341,7 @@ export async function resetUserPasswordAction(
 }
 
 export async function deleteTeamMemberAction(formData: FormData): Promise<void> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("manageTeam");
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 

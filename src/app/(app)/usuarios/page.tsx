@@ -20,6 +20,7 @@ const ROLE_TONES: Record<UserRole, "neutral" | "info" | "success" | "warning"> =
   OWNER: "info",
   GERENTE: "success",
   VENDEDOR: "warning",
+  CAIXA: "neutral",
   CLIENTE: "neutral",
 };
 

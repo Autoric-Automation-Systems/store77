@@ -1,7 +1,9 @@
 import { logoutAction } from "@/app/actions/auth";
 import { AppSidebar, MobileNav } from "@/components/app-nav";
+import { BillingBanner } from "@/components/billing-banner";
 import { Brand } from "@/components/brand";
 import { ROLE_LABELS, requireUser } from "@/lib/auth";
+import { getStoreAccess } from "@/lib/billing/entitlements";
 
 export default async function AppLayout({
   children,
@@ -9,6 +11,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await requireUser();
+  const overview = await getStoreAccess(user.storeId);
 
   return (
     <div className="flex min-h-screen flex-col bg-ink-100">
@@ -44,6 +47,7 @@ export default async function AppLayout({
         <AppSidebar role={user.role} />
         <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
           <div className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
+            <BillingBanner overview={overview} />
             {children}
           </div>
         </main>

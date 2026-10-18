@@ -4,8 +4,13 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { stores, users } from "@/db/schema";
-import { isAdminRole } from "./roles";
+import { isAdminRole, canManageStock } from "./roles";
 import type { SessionUser } from "./roles";
+import {
+  BillingError,
+  requireStoreCapability,
+} from "./billing/entitlements";
+import type { Capabilities } from "./billing/access";
 import {
   SESSION_COOKIE,
   SESSION_MAX_AGE_SECONDS,
@@ -14,7 +19,7 @@ import {
 } from "./session-token";
 
 export type { SessionUser } from "./roles";
-export { ROLE_LABELS, isAdminRole } from "./roles";
+export { ROLE_LABELS, isAdminRole, canManageStock } from "./roles";
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
@@ -86,5 +91,49 @@ export async function requireUser(): Promise<SessionUser> {
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await requireUser();
   if (!isAdminRole(user.role)) redirect("/dashboard");
+  return user;
+}
+
+/**
+ * Só o proprietário contrata, troca plano ou cancela. Gerente administra a
+ * loja, não o contrato: evita que um gerente gere cobrança sem o dono saber.
+ */
+export async function requireOwner(): Promise<SessionUser> {
+  const user = await requireUser();
+  if (user.role !== "OWNER") redirect("/assinatura?semPermissao=1");
+  return user;
+}
+
+/** Operador de caixa vende, mas não mexe em saldo de estoque. */
+export async function requireStockManager(): Promise<SessionUser> {
+  const user = await requireUser();
+  if (!canManageStock(user.role)) redirect("/estoque");
+  try {
+    await requireStoreCapability(user.storeId, "writeStock");
+  } catch (error) {
+    if (error instanceof BillingError) {
+      redirect("/assinatura?bloqueio=1");
+    }
+    throw error;
+  }
+  return user;
+}
+
+/**
+ * Papel administrativo + permissão de cobrança. Uma loja restrita continua
+ * vendendo, mas não altera catálogo, financeiro, vitrine ou equipe.
+ */
+export async function requireAdminCapability(
+  capability: keyof Capabilities,
+): Promise<SessionUser> {
+  const user = await requireAdmin();
+  try {
+    await requireStoreCapability(user.storeId, capability);
+  } catch (error) {
+    if (error instanceof BillingError) {
+      redirect("/assinatura?bloqueio=1");
+    }
+    throw error;
+  }
   return user;
 }

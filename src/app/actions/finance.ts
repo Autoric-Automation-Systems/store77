@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { financialEntries } from "@/db/schema";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminCapability } from "@/lib/auth";
 import {
   fieldErrorsFrom,
   financialEntrySchema,
@@ -30,7 +30,7 @@ export async function saveFinancialEntryAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("manageFinance");
 
   const rawId = String(formData.get("id") ?? "").trim();
   const id = UUID_PATTERN.test(rawId) ? rawId : null;
@@ -107,7 +107,7 @@ export async function saveFinancialEntryAction(
 }
 
 export async function markPaidAction(formData: FormData): Promise<void> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("manageFinance");
   const id = entryIdFrom(formData);
   if (!id) return;
 
@@ -127,7 +127,7 @@ export async function markPaidAction(formData: FormData): Promise<void> {
 }
 
 export async function reopenEntryAction(formData: FormData): Promise<void> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("manageFinance");
   const id = entryIdFrom(formData);
   if (!id) return;
 
@@ -145,7 +145,7 @@ export async function reopenEntryAction(formData: FormData): Promise<void> {
 }
 
 export async function cancelEntryAction(formData: FormData): Promise<void> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("manageFinance");
   const id = entryIdFrom(formData);
   if (!id) return;
 
@@ -165,7 +165,7 @@ export async function cancelEntryAction(formData: FormData): Promise<void> {
 export async function deleteFinancialEntryAction(
   formData: FormData,
 ): Promise<void> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("manageFinance");
   const id = entryIdFrom(formData);
   if (!id) return;
 

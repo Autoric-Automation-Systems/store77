@@ -20,6 +20,7 @@ const initialState: ActionState = { ok: false };
 const ASSIGNABLE_ROLES: { value: UserRole; label: string }[] = [
   { value: "GERENTE", label: ROLE_LABELS.GERENTE },
   { value: "VENDEDOR", label: ROLE_LABELS.VENDEDOR },
+  { value: "CAIXA", label: ROLE_LABELS.CAIXA },
   { value: "CLIENTE", label: ROLE_LABELS.CLIENTE },
 ];
 

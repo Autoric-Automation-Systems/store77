@@ -18,6 +18,7 @@
 --   demo@store77.app     · OWNER    · senha: store77demo
 --   gerente@store77.app  · GERENTE  · senha: store77demo
 --   vendedor@store77.app · VENDEDOR · senha: store77demo
+--   caixa@store77.app    · CAIXA    · senha: store77demo
 
 -- 1. Remove a loja de demonstração anterior (cascata em todo o resto).
 DELETE FROM stores WHERE slug = 'loja-demo';
@@ -54,7 +55,8 @@ FROM stores s
 CROSS JOIN (VALUES
   ('Ana Ribeiro', 'demo@store77.app', '$2b$10$DlXPztLgsWNpmJo7iuq/MeHbjLBVy9KduHulzgDX1KzFbdrn0Yt.y', 'OWNER'),
   ('Carlos Menezes', 'gerente@store77.app', '$2b$10$DlXPztLgsWNpmJo7iuq/MeHbjLBVy9KduHulzgDX1KzFbdrn0Yt.y', 'GERENTE'),
-  ('Juliana Prado', 'vendedor@store77.app', '$2b$10$DlXPztLgsWNpmJo7iuq/MeHbjLBVy9KduHulzgDX1KzFbdrn0Yt.y', 'VENDEDOR')
+  ('Juliana Prado', 'vendedor@store77.app', '$2b$10$DlXPztLgsWNpmJo7iuq/MeHbjLBVy9KduHulzgDX1KzFbdrn0Yt.y', 'VENDEDOR'),
+  ('Paula Nogueira', 'caixa@store77.app', '$2b$10$DlXPztLgsWNpmJo7iuq/MeHbjLBVy9KduHulzgDX1KzFbdrn0Yt.y', 'CAIXA')
 ) AS v(name, email, password_hash, role)
 WHERE s.slug = 'loja-demo';
 
@@ -154,3 +156,20 @@ CROSS JOIN (VALUES
   ('Roberto Lima', '(11) 97777-1234', '123.456.789-00', 'Rua Alagoas, 45, apto 32', 'Prefere atendimento pelo WhatsApp.')
 ) AS v(name, phone, document, address, notes)
 WHERE s.slug = 'loja-demo';
+
+
+-- 17. Assinatura da loja de demonstração: cortesia interna vitalícia.
+-- Fora do MRR e das comissões (exclude_from_metrics), como todo ambiente de teste.
+INSERT INTO subscriptions (
+  store_id, plan_code, price_version, status, billing_mode, interval, provider,
+  current_period_start, current_period_end, grant_type, grant_reason,
+  granted_by_user_id, exclude_from_metrics
+)
+SELECT
+  s.id, 'CORTESIA', '2026-10', 'ACTIVE', 'COMPLIMENTARY', 'MONTHLY', 'MANUAL',
+  now(), NULL, 'INTERNAL', 'Loja de demonstração do produto',
+  u.id, TRUE
+FROM stores s
+LEFT JOIN users u ON u.store_id = s.id AND u.role = 'OWNER'
+WHERE s.slug = 'loja-demo'
+ON CONFLICT (store_id) DO NOTHING;

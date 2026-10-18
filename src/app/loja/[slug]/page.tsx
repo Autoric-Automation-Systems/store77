@@ -14,6 +14,7 @@ import {
   type Product,
 } from "@/db/schema";
 import { toAbsoluteUrl } from "@/lib/blob";
+import { getStoreAccess } from "@/lib/billing/entitlements";
 import { formatBRL } from "@/lib/format";
 import { COMPANY, PRODUCT } from "@/lib/legal";
 import { hexToRgbChannels } from "@/lib/slug";
@@ -149,6 +150,10 @@ export default async function PublicStorePage({
   const store = await loadStore(slug);
 
   if (!store || !store.isPublic) notFound();
+
+  // Assinatura suspensa derruba a vitrine: o catálogo é parte do serviço.
+  const { access } = await getStoreAccess(store.id);
+  if (!access.capabilities.publishStorefront) notFound();
 
   const visibility = store.showOutOfStock
     ? eq(products.active, true)

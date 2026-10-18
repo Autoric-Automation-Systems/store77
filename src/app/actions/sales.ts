@@ -13,7 +13,11 @@ import {
   sales,
   stores,
 } from "@/db/schema";
-import { requireAdmin, requireUser } from "@/lib/auth";
+import { requireAdminCapability, requireUser } from "@/lib/auth";
+import {
+  BillingError,
+  requireStoreCapability,
+} from "@/lib/billing/entitlements";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { formatBRL } from "@/lib/format";
 import { applyMovement, StockError } from "@/lib/stock";
@@ -51,6 +55,16 @@ export async function finalizeSaleAction(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser();
+
+  // PDV é o último recurso a cair: só para de vender na suspensão.
+  try {
+    await requireStoreCapability(user.storeId, "usePos");
+  } catch (error) {
+    if (error instanceof BillingError) {
+      return { ok: false, message: error.message };
+    }
+    throw error;
+  }
 
   const raw = { ...formToObject(formData), items: parseItems(formData) };
   const parsed = checkoutSchema.safeParse(raw);
@@ -241,7 +255,7 @@ export async function finalizeSaleAction(
 }
 
 export async function cancelSaleAction(formData: FormData): Promise<void> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("cancelSales");
   const id = String(formData.get("id") ?? "");
   if (!id) redirect("/caixa/vendas");
 

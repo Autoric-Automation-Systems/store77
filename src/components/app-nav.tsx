@@ -9,6 +9,7 @@ import {
   BarChart3,
   Boxes,
   CircleHelp,
+  CreditCard,
   Globe2,
   LayoutDashboard,
   LogOut,
@@ -25,7 +26,7 @@ import type { LucideIcon } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import type { UserRole } from "@/db/schema";
 import { COMPANY } from "@/lib/legal";
-import { ROLE_LABELS, isAdminOnlyPath, isAdminRole } from "@/lib/roles";
+import { ROLE_LABELS, isPathAllowed } from "@/lib/roles";
 
 type NavItem = {
   href: string;
@@ -65,6 +66,7 @@ const GROUPS: { title: string; items: NavItem[] }[] = [
       { href: "/financeiro", label: "Financeiro", icon: BarChart3 },
       { href: "/vitrine", label: "Vitrine online", icon: Globe2 },
       { href: "/usuarios", label: "Equipe", icon: ShieldCheck },
+      { href: "/assinatura", label: "Assinatura", icon: CreditCard },
     ],
   },
   {
@@ -80,9 +82,7 @@ const GROUPS: { title: string; items: NavItem[] }[] = [
 function visibleGroups(role: UserRole) {
   return GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter(
-      (item) => isAdminRole(role) || !isAdminOnlyPath(item.href),
-    ),
+    items: group.items.filter((item) => isPathAllowed(role, item.href)),
   })).filter((group) => group.items.length > 0);
 }
 

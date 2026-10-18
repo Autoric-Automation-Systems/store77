@@ -199,7 +199,7 @@ export const storeSettingsSchema = z.object({
 export const teamMemberSchema = z.object({
   name: z.string().trim().min(2, "Informe o nome").max(120),
   email: emailSchema,
-  role: z.enum(["GERENTE", "VENDEDOR", "CLIENTE"]),
+  role: z.enum(["GERENTE", "VENDEDOR", "CAIXA", "CLIENTE"]),
 });
 
 export const saleItemInputSchema = z.object({

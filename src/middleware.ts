@@ -9,6 +9,8 @@ const PROTECTED_PREFIXES = [
   "/vitrine",
   "/usuarios",
   "/clientes",
+  "/assinatura",
+  "/admin",
 ];
 
 const AUTH_PAGES = ["/login", "/cadastro"];
@@ -48,6 +50,8 @@ export const config = {
     "/vitrine/:path*",
     "/usuarios/:path*",
     "/clientes/:path*",
+    "/assinatura/:path*",
+    "/admin/:path*",
     "/login",
     "/cadastro",
   ],

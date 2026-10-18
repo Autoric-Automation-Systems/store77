@@ -4,7 +4,7 @@ import { and, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { stores } from "@/db/schema";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminCapability } from "@/lib/auth";
 import { isReservedSlug } from "@/lib/slug";
 import {
   fieldErrorsFrom,
@@ -17,7 +17,7 @@ export async function saveStoreSettingsAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("manageStorefront");
 
   const parsed = storeSettingsSchema.safeParse(formToObject(formData));
   if (!parsed.success) {

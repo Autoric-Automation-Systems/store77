@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { products, stockMovements, users } from "@/db/schema";
-import { requireUser } from "@/lib/auth";
+import { requireStockManager } from "@/lib/auth";
 import { formatDateTime, formatDateTimeShort } from "@/lib/format";
 import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
 import { MovementForm } from "./movement-form";
@@ -25,7 +25,7 @@ export default async function MovimentacoesPage({
 }: {
   searchParams: Promise<{ produto?: string; tipo?: string }>;
 }) {
-  const user = await requireUser();
+  const user = await requireStockManager();
   const { produto = "", tipo = "" } = await searchParams;
 
   const filters: SQL[] = [eq(stockMovements.storeId, user.storeId)];

@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminCapability } from "@/lib/auth";
 import { slugify } from "@/lib/slug";
 import {
   categorySchema,
@@ -23,7 +23,7 @@ export async function saveCategoryAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("writeCatalog");
 
   const parsed = categorySchema.safeParse(formToObject(formData));
   if (!parsed.success) {
@@ -75,7 +75,7 @@ export async function saveCategoryAction(
 }
 
 export async function deleteCategoryAction(formData: FormData): Promise<void> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("writeCatalog");
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 

@@ -7,7 +7,7 @@ import { db } from "@/db";
 import { categories, productImages, products } from "@/db/schema";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { applyMovement, StockError } from "@/lib/stock";
-import { requireAdmin, requireUser } from "@/lib/auth";
+import { requireAdminCapability, requireStockManager } from "@/lib/auth";
 import {
   fieldErrorsFrom,
   formToObject,
@@ -54,7 +54,7 @@ export async function saveProductAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("writeCatalog");
 
   const raw = formToObject(formData);
   raw.images = parseImages(formData);
@@ -230,7 +230,7 @@ export async function saveProductAction(
 }
 
 export async function toggleProductActiveAction(formData: FormData): Promise<void> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("writeCatalog");
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
@@ -243,7 +243,7 @@ export async function toggleProductActiveAction(formData: FormData): Promise<voi
 }
 
 export async function deleteProductAction(formData: FormData): Promise<void> {
-  const user = await requireAdmin();
+  const user = await requireAdminCapability("writeCatalog");
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
@@ -260,7 +260,7 @@ export async function createStockMovementAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireUser();
+  const user = await requireStockManager();
 
   const parsed = stockMovementSchema.safeParse(formToObject(formData));
   if (!parsed.success) {

@@ -11,6 +11,7 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { sendPasswordEmail } from "@/lib/auth-emails";
+import { startTrial } from "@/lib/billing/subscriptions";
 import {
   findPendingAuthToken,
   issueAuthToken,
@@ -149,6 +150,15 @@ export async function registerStoreAction(
 
   let sent = false;
   try {
+    // Todo cadastro nasce com 14 dias do plano Loja, sem cartão. Se a
+    // assinatura falhar, a loja continua funcionando (fallback de acesso) e o
+    // erro fica no log em vez de impedir o cadastro.
+    await startTrial(store.id);
+  } catch (error) {
+    console.error("Falha ao criar o teste da assinatura", error);
+  }
+
+  try {
     sent = await deliverPasswordLink({
       user: { id: owner.id, name, email },
       storeName,
@@ -221,6 +231,13 @@ export async function loginAction(
   if (!valid) return invalid;
 
   await createSessionCookie(user.id);
+
+  // Métrica de uso, não de cobrança: assento é usuário ativo alocado.
+  await db()
+    .update(users)
+    .set({ lastLoginAt: new Date() })
+    .where(eq(users.id, user.id))
+    .catch(() => undefined);
 
   const next = formData.get("next");
   const target =
