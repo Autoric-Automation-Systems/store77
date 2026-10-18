@@ -4,6 +4,8 @@ import { COMPANY, PRODUCT } from "@/lib/legal";
 
 const LINKS = [
   { href: "/ajuda", label: "Ajuda" },
+  { href: "/ajuda/planos", label: "Planos e preços" },
+  { href: "/afiliados", label: "Afiliados" },
   { href: "/termos", label: "Termos de Uso" },
   { href: "/privacidade", label: "Política de Privacidade" },
 ];

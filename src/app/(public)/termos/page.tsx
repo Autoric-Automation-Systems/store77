@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Bullets, ContactBlock, LegalPage, Section } from "../legal-ui";
 import { COMPANY, LEGAL_UPDATED_AT, PRODUCT } from "@/lib/legal";
+import { FULL_ACCESS_GRACE_DAYS, POS_GRACE_DAYS, TRIAL_DAYS } from "@/lib/billing/plans";
 
 export const metadata: Metadata = {
   title: "Termos de Uso",
@@ -72,7 +73,7 @@ export default function TermosPage() {
             "Você deve fornecer informações verdadeiras, exatas e atualizadas no cadastro.",
             "Sua senha é pessoal e intransferível. Você é responsável por mantê-la em sigilo e por tudo que ocorrer na conta por meio dela.",
             "Cada membro da equipe deve ter o próprio acesso. Não compartilhe logins: as movimentações de estoque e sessões de caixa ficam vinculadas ao usuário que as registrou.",
-            "Você é responsável por conceder o papel adequado a cada pessoa (proprietário, gerente, vendedor ou cliente) e por revogar acessos de quem sair da equipe.",
+            "Você é responsável por conceder o papel adequado a cada pessoa (proprietário, gerente, vendedor, caixa ou cliente) e por revogar acessos de quem sair da equipe.",
             "A loja é a única responsável pelos dados que insere sobre seus clientes, pela base legal para tratá-los e por atender os pedidos desses titulares.",
             "Você deve manter um proprietário ativo na conta: o sistema impede a remoção do último, para evitar perda de acesso.",
           ]}
@@ -138,16 +139,69 @@ export default function TermosPage() {
         </p>
       </Section>
 
-      <Section id="precos" title="9. Preços e pagamento">
+      <Section id="precos" title="9. Planos, preços e pagamento">
         <p>
-          As condições comerciais, valores e forma de pagamento são as do plano
-          contratado ou do orçamento acordado entre as partes. A ausência de
-          cobrança na plataforma não significa gratuidade definitiva: valores e
-          faturas são tratados fora do aplicativo, pelos canais combinados com você.
+          O {PRODUCT.name} é oferecido por assinatura, cobrada por loja, em ciclo
+          mensal ou anual. Os planos, limites, adicionais e preços vigentes estão
+          publicados na própria plataforma, em{" "}
+          <Link
+            href="/ajuda/planos"
+            className="font-medium text-brand-700 underline decoration-brand-300 underline-offset-2"
+          >
+            Planos e cobrança
+          </Link>
+          , e a contratação é feita pelo proprietário da loja na tela Assinatura.
         </p>
         <p>
-          Eventuais alterações de preço serão comunicadas com antecedência mínima de
-          30 dias.
+          Toda loja recebe {TRIAL_DAYS} dias de teste sem cobrança e sem cartão. Ao
+          final do teste, a ausência de contratação não gera débito retroativo: a
+          loja passa a modo somente leitura até que um plano seja contratado.
+        </p>
+        <p>
+          Os pagamentos são processados por gateway terceirizado (Asaas), por Pix,
+          boleto ou cartão de crédito. Não armazenamos dados completos de cartão. O
+          cartão, quando usado, autoriza a renovação automática a cada ciclo; Pix e
+          boleto geram uma fatura por ciclo, cujo não pagamento sujeita a loja às
+          regras de atraso abaixo.
+        </p>
+        <p>
+          Cada cobrança gera uma fatura com o valor efetivamente cobrado, disponível
+          na tela Assinatura. O valor registrado na fatura não é alterado por
+          mudanças posteriores de tabela.
+        </p>
+        <Bullets
+          items={[
+            <>
+              <strong>Atraso:</strong> até {FULL_ACCESS_GRACE_DAYS} dias o acesso é
+              completo; entre {FULL_ACCESS_GRACE_DAYS} e {POS_GRACE_DAYS} dias ficam
+              bloqueadas as funções de gestão, mas o PDV, o caixa e a vitrine
+              continuam ativos; após {POS_GRACE_DAYS} dias a loja é suspensa e a
+              vitrine sai do ar, sem exclusão de dados.
+            </>,
+            <>
+              <strong>Reativação:</strong> ao regularizar, o acesso é restabelecido
+              imediatamente, sem taxa.
+            </>,
+            <>
+              <strong>Mudança de plano e adicionais:</strong> o novo valor passa a
+              valer no ciclo seguinte, sem cobrança proporcional nem crédito
+              retroativo, salvo ajuste manual acordado com o suporte.
+            </>,
+            <>
+              <strong>Cancelamento:</strong> pode ser solicitado a qualquer momento
+              pelo proprietário; o acesso permanece até o fim do período já pago e
+              não há multa. Valores já pagos não são devolvidos, salvo hipótese
+              prevista em lei.
+            </>,
+            <>
+              <strong>Reajuste:</strong> comunicado com pelo menos 30 dias de
+              antecedência e aplicado a partir do ciclo seguinte.
+            </>,
+          ]}
+        />
+        <p>
+          O fornecimento de nota fiscal de serviço deve ser solicitado pelos canais
+          de contato, com os dados fiscais da loja.
         </p>
       </Section>
 
@@ -158,7 +212,7 @@ export default function TermosPage() {
             "houver descumprimento destes Termos;",
             "houver uso que coloque em risco a segurança da plataforma ou de terceiros;",
             "houver determinação legal ou judicial;",
-            "o contrato comercial for encerrado ou os pagamentos ficarem em atraso, após aviso.",
+            "a assinatura for cancelada ou os pagamentos ficarem em atraso além dos prazos do item 9;",
           ]}
         />
         <p>

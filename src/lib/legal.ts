@@ -10,9 +10,9 @@ export const COMPANY = {
   cnpj: "33.019.320/0001-42",
   contactEmail: "autoricbr@gmail.com",
   site: "https://autoric.com.br",
-  // Ainda não definidos — ficam ocultos até serem preenchidos.
-  address: null as string | null,
-  privacyEmail: null as string | null,
+  address:
+    "Rua Abel Carvalho, 358 — Monte Belo, Gravataí/RS, CEP 94055-290",
+  privacyEmail: "autoricbr@gmail.com",
 } as const;
 
 /**
@@ -32,7 +32,7 @@ export const PRODUCT = {
 export const PRODUCT_HOST = PRODUCT.url.replace(/^https?:\/\//, "");
 
 /** Data da última revisão exibida no topo dos documentos. */
-export const LEGAL_UPDATED_AT = "13 de outubro de 2026";
+export const LEGAL_UPDATED_AT = "18 de outubro de 2026";
 
 /** Subprocessadores citados na Política de Privacidade. */
 export const SUBPROCESSORS = [

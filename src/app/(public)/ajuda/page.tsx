@@ -11,11 +11,13 @@ import {
   Users,
 } from "lucide-react";
 import { COMPANY, PRODUCT, PRODUCT_HOST } from "@/lib/legal";
+import { PUBLIC_PLANS } from "@/lib/billing/plans";
+import { formatBRL } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Ajuda",
   description:
-    "Guia rápido do Store77: primeiros passos, contas e acesso, módulos, papéis e perguntas frequentes.",
+    "Guia rápido do Store77: primeiros passos, planos e cobrança, contas e acesso, módulos, papéis e perguntas frequentes.",
 };
 
 const FIRST_STEPS = [
@@ -161,7 +163,9 @@ const MODULES = [
     icon: Users,
     title: "Equipe",
     body: [
-      "Convide as pessoas da loja e defina o papel de cada uma. O convite chega por e-mail e a própria pessoa cria a senha pelo link.",
+      "Convide as pessoas da loja e defina o papel de cada uma: proprietário, gerente, vendedor, caixa ou cliente. O convite chega por e-mail e a própria pessoa cria a senha pelo link.",
+      "Quatro papéis operam a loja: proprietário, gerente, vendedor e caixa. O cliente da vitrine não ocupa assento e não entra no painel.",
+      "Cada pessoa ativa que opera a loja ocupa um assento do plano. Ao atingir o limite, o convite é bloqueado até você contratar um assento extra ou mudar de plano.",
       "Enquanto a pessoa não cria a senha, ela aparece como “Convite pendente” na lista. O convite vale por 48 horas e só pode ser usado uma vez.",
       "Proprietário e gerente trocam a própria senha em Equipe → Minha senha. Quem é vendedor não abre essa tela: usa “Esqueci minha senha” na página de login.",
       "O sistema impede remover, desativar ou rebaixar o último proprietário ativo, para que ninguém perca o acesso à loja.",
@@ -170,18 +174,27 @@ const MODULES = [
   },
 ];
 
-const PERMISSIONS: { area: string; owner: boolean; manager: boolean; seller: boolean }[] = [
-  { area: "Painel e indicadores", owner: true, manager: true, seller: true },
-  { area: "Estoque (consultar)", owner: true, manager: true, seller: true },
-  { area: "Cadastrar e editar produtos", owner: true, manager: true, seller: false },
-  { area: "Tipos e nichos", owner: true, manager: true, seller: false },
-  { area: "Movimentações de estoque", owner: true, manager: true, seller: true },
-  { area: "PDV e sessões de caixa", owner: true, manager: true, seller: true },
-  { area: "Vendas (cancelar)", owner: true, manager: true, seller: false },
-  { area: "Clientes (exceto excluir)", owner: true, manager: true, seller: true },
-  { area: "Financeiro", owner: true, manager: true, seller: false },
-  { area: "Vitrine online", owner: true, manager: true, seller: false },
-  { area: "Equipe", owner: true, manager: true, seller: false },
+type PermissionRow = {
+  area: string;
+  owner: boolean;
+  manager: boolean;
+  seller: boolean;
+  cashier: boolean;
+};
+
+const PERMISSIONS: PermissionRow[] = [
+  { area: "Painel e indicadores", owner: true, manager: true, seller: true, cashier: true },
+  { area: "Estoque (consultar)", owner: true, manager: true, seller: true, cashier: true },
+  { area: "Cadastrar e editar produtos", owner: true, manager: true, seller: false, cashier: false },
+  { area: "Tipos e nichos", owner: true, manager: true, seller: false, cashier: false },
+  { area: "Movimentações de estoque", owner: true, manager: true, seller: true, cashier: false },
+  { area: "PDV e sessões de caixa", owner: true, manager: true, seller: true, cashier: true },
+  { area: "Vendas (cancelar)", owner: true, manager: true, seller: false, cashier: false },
+  { area: "Clientes (exceto excluir)", owner: true, manager: true, seller: true, cashier: true },
+  { area: "Financeiro", owner: true, manager: true, seller: false, cashier: false },
+  { area: "Vitrine online", owner: true, manager: true, seller: false, cashier: false },
+  { area: "Equipe", owner: true, manager: true, seller: false, cashier: false },
+  { area: "Assinatura (contratar, trocar, cancelar)", owner: true, manager: false, seller: false, cashier: false },
 ];
 
 const FAQ = [
@@ -238,6 +251,26 @@ const FAQ = [
     a: "Abra o link do e-mail, crie uma senha entre 8 e 72 caracteres e confirme. Você entra direto no painel com o papel definido no convite. Se o link expirou, use “Reenviar confirmação” na tela de login com o e-mail do convite.",
   },
   {
+    q: "Qual plano devo escolher?",
+    a: "Comece pelo Essencial se você vende sozinho ou tem uma pessoa ajudando. Se a loja tem turnos e mais de dois operadores, o Loja já cobre; com vários caixas no mesmo dia, o Equipe é o mínimo confortável. Duas ou três unidades pedem o Rede, e redes com 50 ou mais funcionários vão de Corporativo. O comparativo detalhado está em Ajuda → Planos e cobrança.",
+  },
+  {
+    q: "O que acontece quando o teste de 14 dias acaba?",
+    a: "A loja não é apagada nem cobrada automaticamente: ela passa a modo somente leitura até você contratar um plano. Estoque, vendas, clientes e histórico continuam lá, e a contratação pode ser feita depois, sem cobrança retroativa do período de teste.",
+  },
+  {
+    q: "Como troco de plano ou cancelo?",
+    a: "Só o proprietário vê a tela Assinatura. A troca de plano e o ajuste de adicionais valem a partir do próximo vencimento, sem cobrança proporcional. O cancelamento mantém o acesso até o fim do período já pago e não tem multa.",
+  },
+  {
+    q: "O que conta como usuário ativo?",
+    a: "Cada pessoa ativa com papel de proprietário, gerente, vendedor ou caixa. Cliente da vitrine não ocupa assento. Desativar alguém libera o assento na hora; reativar volta a ocupá-lo, e o sistema bloqueia a reativação se o limite estiver cheio.",
+  },
+  {
+    q: "Atraso o pagamento. A loja para de funcionar?",
+    a: "Não de imediato. Até 7 dias o acesso é completo. Entre 7 e 30 dias, o PDV, o caixa e a vitrine continuam funcionando e só as funções de gestão ficam bloqueadas. Depois de 30 dias, a loja entra em somente leitura e a vitrine sai do ar. Nada é apagado e a reativação é imediata após o pagamento.",
+  },
+  {
     q: "Dá para ver a senha que estou digitando?",
     a: "Sim. Todo campo de senha tem um ícone de olho no canto direito: um clique mostra o texto, outro esconde. É útil para conferir antes de salvar, principalmente no celular. O ícone apenas muda a exibição na tela — a senha não é guardada nem enviada para lugar nenhum por causa disso.",
   },
@@ -276,6 +309,7 @@ export default function AjudaPage() {
       <nav className="mt-8 flex flex-wrap gap-2">
         {[
           { href: "#primeiros-passos", label: "Primeiros passos" },
+          { href: "#plano", label: "Plano e cobrança" },
           { href: "#acesso", label: "Contas e acesso" },
           { href: "#modulos", label: "Módulos" },
           { href: "#permissoes", label: "Permissões" },
@@ -320,6 +354,66 @@ export default function AjudaPage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section id="plano" className="mt-12 scroll-mt-20">
+        <h2 className="text-xl font-bold tracking-tight text-ink-900">
+          Plano e cobrança
+        </h2>
+        <p className="mt-2 text-sm text-ink-600">
+          A assinatura é da loja, não da pessoa, e começa com 14 dias de teste sem
+          cartão. Os planos mudam em três coisas: quantidade de usuários ativos,
+          vendas por mês e lojas incluídas — além dos recursos de gestão para
+          equipes maiores.
+        </p>
+        <div className="mt-5 overflow-x-auto rounded-xl border border-ink-200">
+          <table className="min-w-full divide-y divide-ink-200 text-sm">
+            <thead className="table-head">
+              <tr>
+                <th className="px-4 py-3">Plano</th>
+                <th className="px-4 py-3">Usuários</th>
+                <th className="px-4 py-3">Vendas/mês</th>
+                <th className="px-4 py-3">Lojas</th>
+                <th className="px-4 py-3">A partir de</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-100">
+              {PUBLIC_PLANS.map((plan) => (
+                <tr key={plan.code}>
+                  <td className="px-4 py-2.5 font-medium text-ink-800">
+                    {plan.name}
+                  </td>
+                  <td className="px-4 py-2.5 text-ink-700">{plan.includedSeats}</td>
+                  <td className="px-4 py-2.5 text-ink-700">
+                    {plan.includedSalesPerMonth.toLocaleString("pt-BR")}
+                  </td>
+                  <td className="px-4 py-2.5 text-ink-700">{plan.includedStores}</td>
+                  <td className="px-4 py-2.5 text-ink-700">
+                    {formatBRL(plan.monthlyCents)}/mês
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 text-sm text-ink-600">
+          Usuários ativos são limite firme: o convite é bloqueado quando os
+          assentos acabam. Vendas por mês são faixa de uso: o painel avisa ao
+          chegar perto do limite, mas as vendas continuam registrando. O Essencial
+          é para quem vende sozinho — um único login, o do proprietário. Para
+          trabalhar com mais alguém, o Loja inclui três logins (dono + duas
+          pessoas) e o Equipe oito; um assento avulso custa R$ 7,90/mês quando você
+          só precisa de mais uma pessoa. Cada degrau inclui tudo do anterior. A
+          comparação completa, os adicionais, a regra de atraso e o cancelamento
+          estão em{" "}
+          <Link
+            href="/ajuda/planos"
+            className="font-medium text-brand-700 underline decoration-brand-300 underline-offset-2"
+          >
+            Planos e cobrança
+          </Link>
+          .
+        </p>
       </section>
 
       <section id="acesso" className="mt-12 scroll-mt-20">
@@ -386,8 +480,10 @@ export default function AjudaPage() {
           Quem pode acessar o quê
         </h2>
         <p className="mt-2 text-sm text-ink-600">
-          O papel é definido por pessoa, em Equipe. O perfil de cliente é reservado
-          ao consumidor da vitrine e não dá acesso ao painel.
+          O papel é definido por pessoa, em Equipe. O caixa opera o PDV e o
+          fechamento de turno, mas não altera saldo de estoque nem executa ações de
+          gestão. O perfil de cliente é reservado ao consumidor da vitrine e não dá
+          acesso ao painel.
         </p>
         <div className="mt-5 overflow-x-auto rounded-xl border border-ink-200">
           <table className="min-w-full divide-y divide-ink-200 text-sm">
@@ -397,6 +493,7 @@ export default function AjudaPage() {
                 <th className="px-4 py-3 text-center">Proprietário</th>
                 <th className="px-4 py-3 text-center">Gerente</th>
                 <th className="px-4 py-3 text-center">Vendedor</th>
+                <th className="px-4 py-3 text-center">Caixa</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
@@ -411,6 +508,9 @@ export default function AjudaPage() {
                   </td>
                   <td className="px-4 py-2.5 text-center">
                     <PermissionMark allowed={row.seller} />
+                  </td>
+                  <td className="px-4 py-2.5 text-center">
+                    <PermissionMark allowed={row.cashier} />
                   </td>
                 </tr>
               ))}
@@ -468,6 +568,9 @@ export default function AjudaPage() {
             </Link>
             <Link href="/privacidade" className="btn btn-secondary">
               Política de Privacidade
+            </Link>
+            <Link href="/afiliados" className="btn btn-secondary">
+              Programa de afiliados
             </Link>
           </div>
         </div>

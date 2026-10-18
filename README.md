@@ -93,12 +93,17 @@ Sem conta ainda? `/cadastro` cria a loja e o usuário proprietário em um passo.
 | `/clientes/[id]` | Caixa | Ficha do cliente: ticket médio, última compra, dados de contato e as vendas vinculadas. |
 | `/financeiro` | Financeiro | Contas a pagar/receber, baixa, vencidos e receita de vendas. |
 | `/vitrine` | Vitrine | Configuração da landing page: link, logo, hero, textos, paleta e contato. |
-| `/usuarios` | Equipe | Membros, papéis, convite por e-mail e redefinição de senha. |
+| `/usuarios` | Equipe | Membros, papéis, convite por e-mail, assentos do plano e redefinição de senha. |
+| `/assinatura` | Assinatura | Plano atual, uso, adicionais, faturas e contratação. Só o proprietário altera. |
+| `/admin` | Interno | Painel da plataforma: MRR, testes, cortesias, inadimplência e lista de lojas. |
+| `/admin/lojas/[id]` | Interno | Detalhe da loja: assinatura, eventos, faturas, cortesia e troca de plano. |
 | `/cadastro` | Autenticação | Criação da loja; o e-mail é confirmado e a senha é criada por link. |
 | `/esqueci-senha` | Autenticação | Solicitação de link para redefinir a senha. |
 | `/definir-senha/[token]` | Autenticação | Criação/redefinição de senha a partir do link enviado por e-mail. |
 | `/loja/[slug]` | Pública | Landing page gerada automaticamente a partir do estoque. |
-| `/ajuda` | Pública | Central de ajuda: primeiros passos, guia dos módulos, permissões e FAQ. |
+| `/ajuda` | Pública | Central de ajuda: primeiros passos, plano, guia dos módulos, permissões e FAQ. |
+| `/ajuda/planos` | Pública | Comparativo dos planos, adicionais, atraso, cancelamento e reajuste. |
+| `/afiliados` | Pública | Programa de afiliados: comissão, regras e cadastro. |
 | `/termos` | Pública | Termos de Uso. |
 | `/privacidade` | Pública | Política de Privacidade (LGPD). |
 
@@ -147,7 +152,8 @@ automaticamente, desde que já tenham senha, para não perderem o acesso.
 | `OWNER` (Proprietário) | Tudo. Criado no cadastro da loja. |
 | `GERENTE` | Tudo, exceto criar outro proprietário. |
 | `VENDEDOR` | Painel, Estoque (leitura + movimentações), Caixa, Vendas e Clientes. |
-| `CLIENTE` | Reservado para o consumidor final (vitrine). |
+| `CAIXA` | PDV, sessões do próprio turno e Clientes. Não movimenta estoque nem administra. |
+| `CLIENTE` | Reservado para o consumidor final (vitrine). Não ocupa assento. |
 
 `Financeiro`, `Vitrine` e `Equipe` são restritos à gestão (`OWNER`/`GERENTE`),
 tanto no menu quanto na server action — o guard é `requireAdmin()`.
@@ -186,7 +192,74 @@ domínio como parâmetro — continua sem deploy separado.
 
 ---
 
-## 3. Modelo de dados
+## 3. Assinatura e cobrança
+
+A cobrança é **por loja**, não por usuário. O catálogo de planos fica em
+[`src/lib/billing/plans.ts`](./src/lib/billing/plans.ts) e é a única fonte de
+preço e limite — a fatura guarda o valor cobrado como snapshot.
+
+| Plano | Mensal | Anual | Usuários | Vendas/mês | Lojas |
+| --- | --- | --- | --- | --- | --- |
+| Essencial | R$ 19,90 | R$ 191,00 | 1 | 500 | 1 |
+| Loja | R$ 39,90 | R$ 383,00 | 3 | 1.500 | 1 |
+| Equipe | R$ 79,90 | R$ 767,00 | 8 | 5.000 | 1 |
+| Rede | R$ 139,90 | R$ 1.343,00 | 20 | 12.000 | 3 |
+| Corporativo | R$ 269,90 | R$ 2.591,00 | 50 | 30.000 | 10 |
+
+O Essencial é a âncora de preço (1990 centavos). Os demais derivam dela em
+múltiplos (2x, 4x, 7x e 13,5x) e são arredondados para terminar em `,90`. Plano
+novo entra nessa lógica, não como valor solto. O anual aplica 20% de desconto.
+
+A escada de assentos é **1, 3, 8, 20 e 50**, então o custo por usuário cai de
+R$ 19,90 para R$ 5,40 — subir de plano sempre rende mais do que empilhar
+assentos avulsos. É essa queda que sustenta o upgrade conforme a loja cresce.
+
+**Adicionais:** usuário extra R$ 7,90/mês, loja extra R$ 26,90/mês e pacote de
+5.000 vendas R$ 12,90/mês. O assento avulso fica entre o melhor preço por
+usuário do catálogo (R$ 5,40) e o do Essencial (R$ 19,90): resolve o caso "só
+preciso de mais uma pessoa", sem canibalizar o plano seguinte.
+
+**Regras de acesso** (`src/lib/billing/access.ts`):
+
+| Situação | Acesso |
+| --- | --- |
+| Em dia, teste ou cortesia válida | Completo. |
+| Até 7 dias de atraso | Completo, com aviso no painel. |
+| 7 a 30 dias | PDV, caixa e vitrine funcionam; catálogo, financeiro, equipe e vitrine (configuração) bloqueados. |
+| Mais de 30 dias | Somente leitura; vitrine fora do ar. Nada é apagado. |
+| Cancelada | Acesso até o fim do período pago; depois, somente leitura. |
+
+**Assentos:** `OWNER`, `GERENTE`, `VENDEDOR` e `CAIXA` ocupam assento; `CLIENTE`
+não. O convite e a reativação chamam `assertSeatAvailable()`. **Vendas** são
+faixa de uso: o painel avisa em 80% e 100%, mas o PDV nunca é bloqueado por
+volume.
+
+**Teste:** 14 dias no plano Loja, sem cartão. Ao escolher o plano, a troca é
+recusada se a equipe ativa (mais assentos extras) não couber — obriga a desativar
+logins antes de descer para o Essencial, em vez de deixar a loja acima do limite.
+
+**Diferenças entre planos:** hoje o que muda é capacidade (assentos, vendas e
+lojas). Módulos, caixa por turno e papéis são iguais em todos. Multi-loja é
+contratual e habilitado pelo suporte; a consolidação entre unidades está em
+rollout — a página `/ajuda/planos` diz isso de forma explícita para não vender
+recurso que ainda não está na conta.
+
+**Provedor:** Asaas (`src/lib/billing/asaas.ts`), via Pix, boleto ou cartão. Sem
+`ASAAS_API_KEY` a contratação online fica desligada e a tela mostra o aviso. O
+webhook `POST /api/webhooks/asaas` valida `asaas-access-token`, grava o evento em
+`payment_events` (chave única por provedor + id externo) e só então aplica
+assinatura, fatura e comissão.
+
+**Migração:** `drizzle/0003_billing.sql` cria as tabelas de cobrança e concede
+**90 dias de cortesia** (`LEGACY`) às lojas existentes. Ao final, a loja segue a
+regra normal de contratação.
+
+**Painel interno:** `/admin` exige `PLATFORM_ADMIN_EMAILS`. Quem está na lista é
+espelhado em `platform_admins` no primeiro acesso; remover da variável revoga.
+
+---
+
+## 4. Modelo de dados
 
 12 tabelas, todas as entidades de negócio com `store_id` (isolamento multi-tenant).
 
@@ -212,7 +285,7 @@ Convenções:
 
 ---
 
-## 4. Deploy na Vercel
+## 5. Deploy na Vercel
 
 1. Importe o repositório na Vercel (framework detectado automaticamente).
 2. Em **Storage**, crie um **Blob store** com acesso **public** e conecte ao
@@ -281,7 +354,7 @@ desligue a proteção no domínio de produção e mantenha apenas nos *previews*
 
 ---
 
-## 5. Comandos
+## 6. Comandos
 
 | Comando | O que faz |
 | --- | --- |
@@ -290,6 +363,7 @@ desligue a proteção no domínio de produção e mantenha apenas nos *previews*
 | `npm run start` | Sobe o build de produção. |
 | `npm run lint` | ESLint. |
 | `npm run typecheck` | `tsc --noEmit`. |
+| `npm test` | Testes de unidade (`node --test`, inclui as regras de cobrança). |
 | `npm run db:generate` | Gera nova migração a partir do schema. |
 | `npm run db:migrate` | Aplica as migrações pendentes. |
 | `npm run db:push` | Sincroniza o schema sem versionar. |
@@ -297,7 +371,7 @@ desligue a proteção no domínio de produção e mantenha apenas nos *previews*
 
 ---
 
-## 6. Documentos legais e ajuda
+## 7. Documentos legais e ajuda
 
 Três páginas públicas completam o produto:
 
@@ -305,17 +379,31 @@ Três páginas públicas completam o produto:
 | --- | --- |
 | `/termos` | Termos de Uso: conta, uso aceitável, titularidade dos dados, disponibilidade e limitação de responsabilidade. |
 | `/privacidade` | Política de Privacidade alinhada à LGPD: papéis de controlador e operador, cookies, subprocessadores, retenção e direitos do titular. |
-| `/ajuda` | Central de ajuda: primeiros passos, guia de cada módulo, tabela de permissões por papel e perguntas frequentes. |
+| `/ajuda` | Central de ajuda: primeiros passos, plano, guia de cada módulo, tabela de permissões por papel e perguntas frequentes. |
+| `/ajuda/planos` | Planos e cobrança: comparativo, adicionais, teste, atraso, cancelamento e reajuste. |
+| `/afiliados` | Programa de afiliados: comissão recorrente, regras de apuração e cadastro. |
 
 Ficam no grupo de rotas `(public)` e compartilham o mesmo cabeçalho e rodapé
 ([`site-footer.tsx`](./src/components/site-footer.tsx)).
 
-### Preencha antes de publicar
+### Dados do fornecedor
 
 Os dados do fornecedor estão em **um único lugar**:
-[`src/lib/legal.ts`](./src/lib/legal.ts). Substitua os campos entre colchetes
-(razão social, CNPJ, endereço, e-mails de contato e do encarregado de dados e
-site) — eles aparecem automaticamente nos dois documentos.
+[`src/lib/legal.ts`](./src/lib/legal.ts) — razão social, CNPJ, endereço, contato,
+encarregado de dados e site. Os Termos e a Política leem desse arquivo, então
+qualquer mudança vale para os dois documentos de uma vez.
+
+### Acesso ao painel interno
+
+`/admin` não depende de papel na loja: valida o e-mail do usuário contra
+`PLATFORM_ADMIN_EMAILS`. A cada requisição o `requirePlatformAdmin()` confere a
+variável, e a tabela `platform_admins` serve apenas como registro de quem já
+entrou. Consequências:
+
+- e-mail fora da lista → acesso negado, mesmo que já tenha entrado antes;
+- variável vazia → ninguém acessa `/admin` (inclusive em produção);
+- o usuário precisa ser uma conta ativa e com e-mail confirmado, o que já é
+  exigido no login.
 
 > Os textos foram redigidos como base técnica e cobrem os pontos que a LGPD e a
 > prática de SaaS exigem, mas **não substituem revisão jurídica**. Peça a um
@@ -331,7 +419,7 @@ concordou.
 
 ---
 
-## 7. Identidade visual
+## 8. Identidade visual
 
 A marca do Store77 fica em [`public/`](./public):
 
@@ -357,12 +445,12 @@ landing page do cliente final.
 
 ---
 
-## 8. Decisões e próximos passos
+## 9. Decisões e próximos passos
 
 **Decisões**
 
 - **Sessão própria** (JWT HS256 em cookie `httpOnly`) em vez de Auth.js: o
-  modelo é multi-tenant com 4 papéis e não há login social. Trocar por Auth.js
+  modelo é multi-tenant com 5 papéis e não há login social. Trocar por Auth.js
   depois é uma mudança localizada em [`src/lib/auth.ts`](./src/lib/auth.ts).
 - **Fotos**: Vercel Blob em produção; sem `BLOB_READ_WRITE_TOKEN`, o ambiente de
   desenvolvimento grava em `public/uploads` para não exigir token. O app se
@@ -374,6 +462,12 @@ landing page do cliente final.
   confiamos em valores enviados pelo cliente.
 - Toda escrita de estoque roda em transação com `SELECT … FOR UPDATE` na linha do
   produto, e a numeração da venda trava a linha da loja.
+- **Cobrança com catálogo em código.** Preço é regra versionada (`PRICE_VERSION`),
+  não dado editável no banco; a fatura guarda o valor cobrado. O provedor inicial
+  é o Asaas; `billing_provider_name` guarda `ASAAS`, `STRIPE` e `MANUAL`. A comissão
+  de afiliado é apurada no webhook, com retenção de 30 dias para cobrir estorno.
+- **Vendas são faixa de uso, assentos são limite firme.** Travar o PDV por volume
+  custa mais que o upgrade: o sistema avisa em 80% e 100% e sugere pacote.
 
 **Próximos passos sugeridos**
 
@@ -382,3 +476,6 @@ landing page do cliente final.
 - Relatórios por período (curva ABC, giro de estoque, lucratividade).
 - Row Level Security no Neon, trocando o filtro por `store_id` na aplicação por
   política no banco.
+- Portal do afiliado com link, cliques e extrato (hoje o credenciamento é manual).
+- Cupons de desconto self-service (as tabelas `coupons` e `coupon_redemptions` já existem).
+- Exportação CSV/JSON pelo próprio painel, inclusive em loja suspensa.

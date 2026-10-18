@@ -11,6 +11,12 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
           <Brand className="h-9" />
           <nav className="flex items-center gap-3 text-sm">
             <Link
+              href="/ajuda/planos"
+              className="hidden font-medium text-ink-600 hover:text-ink-900 sm:inline"
+            >
+              Planos
+            </Link>
+            <Link
               href="/ajuda"
               className="font-medium text-ink-600 hover:text-ink-900"
             >
