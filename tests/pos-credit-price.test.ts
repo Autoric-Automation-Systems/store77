@@ -36,6 +36,7 @@ test("parcelas dividem o total da venda, inclusive com desconto quebrado", () =>
     count: 4,
     installmentCents: 2500,
     totalCents: 10000,
+    interestFree: true,
   });
   assert.equal(splitInstallments(10000, 3)?.installmentCents, 3333);
 });
@@ -57,4 +58,14 @@ test("vale o parcelamento do item mais restritivo do carrinho", () => {
 test("item só à vista derruba o carrinho para 1x", () => {
   assert.equal(cartInstallmentsLimit([12, 1]), 1);
   assert.equal(cartInstallmentsLimit([0, 12]), 1);
+});
+
+test("venda no crédito com preço cheio não é anunciada sem juros", () => {
+  const plan = splitInstallments(18000, 3, 15000);
+  assert.equal(plan?.interestFree, false);
+  assert.equal(plan?.installmentCents, 6000);
+});
+
+test("venda no crédito pelo mesmo preço do à vista é sem juros", () => {
+  assert.equal(splitInstallments(15000, 3, 15000)?.interestFree, true);
 });

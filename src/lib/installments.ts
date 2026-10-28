@@ -8,11 +8,19 @@ export type InstallmentPlan = {
   installmentCents: number;
   /** Total cobrado no crédito em centavos. */
   totalCents: number;
+  /** Só dá para dizer "sem juros" quando o total parcelado é o preço à vista. */
+  interestFree: boolean;
 };
 
+/**
+ * Divide um total em parcelas. `cashPriceCents` é o preço à vista do mesmo
+ * produto: se o total parcelado for maior, o juro está embutido no preço e o
+ * anúncio não pode prometer "sem juros".
+ */
 export function splitInstallments(
   totalCents: number,
   count: number,
+  cashPriceCents: number = totalCents,
 ): InstallmentPlan | null {
   const parcels = Math.trunc(Number(count));
   if (!Number.isFinite(parcels) || parcels < 2) return null;
@@ -21,7 +29,12 @@ export function splitInstallments(
   const installmentCents = Math.round(totalCents / parcels);
   if (installmentCents <= 0) return null;
 
-  return { count: parcels, installmentCents, totalCents };
+  return {
+    count: parcels,
+    installmentCents,
+    totalCents,
+    interestFree: totalCents <= cashPriceCents,
+  };
 }
 
 /**
@@ -36,13 +49,24 @@ export function installmentPlan(
 ): InstallmentPlan | null {
   const totalCents =
     creditPriceCents && creditPriceCents > 0 ? creditPriceCents : cashPriceCents;
-  return splitInstallments(totalCents, Number(installments ?? 1));
+  return splitInstallments(
+    totalCents,
+    Number(installments ?? 1),
+    cashPriceCents,
+  );
+}
+
+/** Texto sem o "ou" inicial, para linhas de resumo e etiquetas. */
+export function installmentText(plan: InstallmentPlan | null): string | null {
+  if (!plan) return null;
+  const suffix = plan.interestFree ? " sem juros" : "";
+  return `${plan.count}x de ${formatBRL(plan.installmentCents)}${suffix}`;
 }
 
 /** Texto do card, no formato usado por Mercado Livre, Nuvemshop e Shopee. */
 export function installmentLabel(plan: InstallmentPlan | null): string | null {
-  if (!plan) return null;
-  return `ou ${plan.count}x de ${formatBRL(plan.installmentCents)} sem juros`;
+  const text = installmentText(plan);
+  return text ? `ou ${text}` : null;
 }
 
 /**

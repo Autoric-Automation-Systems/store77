@@ -86,7 +86,7 @@ Sem conta ainda? `/cadastro` cria a loja e o usuário proprietário em um passo.
 | `/estoque` | Estoque | Produtos com código/SKU, descrição, fotos, preço à vista, preço no crédito, parcelas sem juros, quantidade, estoque mínimo e endereço de armazenagem. Filtros por tipo e situação. |
 | `/estoque/movimentacoes` | Estoque | Entradas, saídas e ajustes com saldo resultante e histórico auditável. |
 | `/estoque/categorias` | Estoque | Tipos de produto e nichos da loja (usados nos carrosséis da vitrine). |
-| `/caixa` | Caixa | PDV com carrinho, desconto, cliente e forma de pagamento. No crédito o item entra pelo preço cheio do cadastro e a venda registra as parcelas sem juros, limitadas ao item mais restritivo do carrinho. |
+| `/caixa` | Caixa | PDV com carrinho, desconto, cliente e forma de pagamento. No crédito o item entra pelo preço cheio do cadastro e a venda registra as parcelas, limitadas ao item mais restritivo do carrinho; o “sem juros” só aparece quando não há acréscimo. |
 | `/caixa/vendas` | Caixa | Vendas realizadas, itens de cada venda na própria lista (com a forma de pagamento e as parcelas) e cancelamento (devolve estoque e estorna o caixa). |
 | `/caixa/sessoes` | Caixa | Abertura/fechamento de turno, sangria, suprimento e conferência de valores. |
 | `/clientes` | Caixa | Cadastro de clientes com quantidade de compras e total gasto. |
@@ -109,6 +109,10 @@ Sem conta ainda? `/cadastro` cria a loja e o usuário proprietário em um passo.
 | `/afiliados` | Pública | Programa de afiliados: comissão, regras e cadastro. |
 | `/termos` | Pública | Termos de Uso. |
 | `/privacidade` | Pública | Política de Privacidade (LGPD). |
+
+Preço no crédito, quando maior que o à vista, é o total parcelado: o anúncio mostra
+só “ou 3x de R$ 40,00” e não promete juros zero. Preço de crédito vazio ou igual ao
+à vista mantém o “sem juros”.
 
 ### Cadastro, confirmação de e-mail e senha
 

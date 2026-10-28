@@ -6,7 +6,11 @@ import { finalizeSaleAction } from "@/app/actions/sales";
 import { SubmitButton } from "@/components/submit-button";
 import { Alert, Card, CardHeader, EmptyState } from "@/components/ui";
 import { formatBRL, parseMoneyToCents } from "@/lib/format";
-import { cartInstallmentsLimit, splitInstallments } from "@/lib/installments";
+import {
+  cartInstallmentsLimit,
+  installmentText,
+  splitInstallments,
+} from "@/lib/installments";
 import { isCreditPayment, saleUnitPriceCents } from "@/lib/pricing";
 import { MAX_INSTALLMENTS, type ActionState } from "@/lib/validation";
 
@@ -101,6 +105,16 @@ export function Pdv({
   );
   const totalCents = subtotalCents - discountCents;
 
+  // Mesmo carrinho pago à vista: é o que decide se as parcelas podem ser
+  // anunciadas como "sem juros" ou se o juro já está no preço do crédito.
+  const cashTotalCents =
+    cart.reduce((sum, line) => {
+      const product = byId.get(line.productId);
+      return product
+        ? sum + saleUnitPriceCents(product, false) * line.quantity
+        : sum;
+    }, 0) - discountCents;
+
   // O parcelamento anunciado vale para o item mais restritivo do carrinho:
   // oferecer 12x com um produto de 3x faria o cliente contratar o que a loja
   // não oferece.
@@ -109,8 +123,10 @@ export function Pdv({
   );
   const chosenInstallments = Math.min(Math.max(installments, 1), maxInstallments);
   const creditPlan = isCredit
-    ? splitInstallments(totalCents, chosenInstallments)
+    ? splitInstallments(totalCents, chosenInstallments, cashTotalCents)
     : null;
+  // Preço de crédito maior que o à vista embute juro: nada de "sem juros" na tela.
+  const hasCreditMarkup = totalCents > cashTotalCents;
 
   useEffect(() => {
     if (!state.ok || !state.message) return;
@@ -380,7 +396,7 @@ export function Pdv({
             {isCredit && maxInstallments >= 2 ? (
               <div>
                 <label className="label" htmlFor="installments">
-                  Parcelas sem juros
+                  {hasCreditMarkup ? "Parcelas" : "Parcelas sem juros"}
                 </label>
                 <select
                   id="installments"
@@ -455,10 +471,7 @@ export function Pdv({
             {creditPlan ? (
               <div className="flex justify-between text-xs text-ink-500">
                 <dt>Parcelas</dt>
-                <dd>
-                  {creditPlan.count}x de{" "}
-                  {formatBRL(creditPlan.installmentCents)} sem juros
-                </dd>
+                <dd>{installmentText(creditPlan)}</dd>
               </div>
             ) : null}
             {isCredit && cart.length > 0 && maxInstallments < 2 ? (

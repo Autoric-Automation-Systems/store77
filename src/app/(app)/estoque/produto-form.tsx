@@ -215,7 +215,7 @@ export function ProductForm({
             label="Parcelas sem juros"
             name="installments"
             error={state.fieldErrors?.installments}
-            hint="A vitrine anuncia “ou 3x de R$ 40,00 sem juros”."
+            hint="A vitrine anuncia “ou 3x de R$ 40,00 sem juros”. Com preço no crédito maior que o à vista, o “sem juros” não aparece."
           >
             <select
               id="installments"
