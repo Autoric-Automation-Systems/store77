@@ -7,9 +7,14 @@ import { ImageUploader } from "@/components/image-uploader";
 import { SubmitButton } from "@/components/submit-button";
 import { Alert, Card, CardHeader, Field } from "@/components/ui";
 import { centsToInput } from "@/lib/format";
-import type { ActionState } from "@/lib/validation";
+import { MAX_INSTALLMENTS, type ActionState } from "@/lib/validation";
 
 const UNITS = ["UN", "KG", "G", "L", "ML", "M", "CX", "PCT"];
+
+const INSTALLMENT_OPTIONS = Array.from(
+  { length: MAX_INSTALLMENTS },
+  (_, index) => index + 1,
+);
 
 const initialState: ActionState = { ok: false };
 
@@ -23,6 +28,8 @@ export type ProductFormValues = {
   unit: string;
   priceCents: number;
   costCents: number;
+  creditPriceCents: number | null;
+  installments: number;
   quantity: number;
   minQuantity: number;
   location: string | null;
@@ -181,6 +188,49 @@ export function ProductForm({
               }
               placeholder="0,00"
             />
+          </Field>
+
+          <Field
+            label="Preço no crédito (R$)"
+            name="creditPriceCents"
+            error={state.fieldErrors?.creditPriceCents}
+            hint="Preço cheio no cartão. Em branco, as parcelas usam o preço à vista."
+          >
+            <input
+              id="creditPriceCents"
+              name="creditPriceCents"
+              inputMode="decimal"
+              className="input"
+              defaultValue={
+                sent?.creditPriceCents ??
+                (product?.creditPriceCents
+                  ? centsToInput(product.creditPriceCents)
+                  : "")
+              }
+              placeholder="0,00"
+            />
+          </Field>
+
+          <Field
+            label="Parcelas sem juros"
+            name="installments"
+            error={state.fieldErrors?.installments}
+            hint="A vitrine anuncia “ou 3x de R$ 40,00 sem juros”."
+          >
+            <select
+              id="installments"
+              name="installments"
+              className="input"
+              defaultValue={
+                sent?.installments ?? String(product?.installments ?? 1)
+              }
+            >
+              {INSTALLMENT_OPTIONS.map((count) => (
+                <option key={count} value={count}>
+                  {count === 1 ? "1x (somente à vista)" : `${count}x`}
+                </option>
+              ))}
+            </select>
           </Field>
 
           <Field

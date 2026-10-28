@@ -83,16 +83,16 @@ Sem conta ainda? `/cadastro` cria a loja e o usuário proprietário em um passo.
 | Rota | Módulo | O que faz |
 | --- | --- | --- |
 | `/dashboard` | Painel | Vendas do dia, valor do estoque, alertas de reposição, sessão de caixa. |
-| `/estoque` | Estoque | Produtos com código/SKU, descrição, fotos, quantidade, estoque mínimo e endereço de armazenagem. Filtros por tipo e situação. |
+| `/estoque` | Estoque | Produtos com código/SKU, descrição, fotos, preço à vista, preço no crédito, parcelas sem juros, quantidade, estoque mínimo e endereço de armazenagem. Filtros por tipo e situação. |
 | `/estoque/movimentacoes` | Estoque | Entradas, saídas e ajustes com saldo resultante e histórico auditável. |
 | `/estoque/categorias` | Estoque | Tipos de produto e nichos da loja (usados nos carrosséis da vitrine). |
-| `/caixa` | Caixa | PDV com carrinho, desconto, cliente e forma de pagamento. |
-| `/caixa/vendas` | Caixa | Vendas realizadas, itens de cada venda na própria lista e cancelamento (devolve estoque e estorna o caixa). |
+| `/caixa` | Caixa | PDV com carrinho, desconto, cliente e forma de pagamento. No crédito o item entra pelo preço cheio do cadastro e a venda registra as parcelas sem juros, limitadas ao item mais restritivo do carrinho. |
+| `/caixa/vendas` | Caixa | Vendas realizadas, itens de cada venda na própria lista (com a forma de pagamento e as parcelas) e cancelamento (devolve estoque e estorna o caixa). |
 | `/caixa/sessoes` | Caixa | Abertura/fechamento de turno, sangria, suprimento e conferência de valores. |
 | `/clientes` | Caixa | Cadastro de clientes com quantidade de compras e total gasto. |
 | `/clientes/[id]` | Caixa | Ficha do cliente: ticket médio, última compra, dados de contato e as vendas vinculadas. |
 | `/financeiro` | Financeiro | Contas a pagar/receber, baixa, vencidos e receita de vendas. |
-| `/vitrine` | Vitrine | Configuração da landing page: link, logo, hero, textos, paleta e contato. |
+| `/vitrine` | Vitrine | Configuração da landing page: link, logo, hero, textos, paleta e contato. Cada card mostra o preço à vista e o valor das parcelas. |
 | `/usuarios` | Equipe | Membros, papéis, convite por e-mail, assentos do plano e redefinição de senha. |
 | `/assinatura` | Assinatura | Plano atual, uso, adicionais, faturas e contratação. Só o proprietário altera. |
 | `/admin` | Interno | Painel da plataforma: MRR, testes, afiliados, repasses e atalhos para cada seção. |

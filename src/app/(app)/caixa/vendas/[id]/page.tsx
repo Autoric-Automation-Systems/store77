@@ -52,6 +52,7 @@ export default async function VendaPage({
       discountCents: sales.discountCents,
       totalCents: sales.totalCents,
       paymentMethod: sales.paymentMethod,
+      installments: sales.installments,
       notes: sales.notes,
       customerName: customers.name,
       customerPhone: customers.phone,
@@ -209,6 +210,9 @@ export default async function VendaPage({
                   {sale.paymentMethod
                     ? PAYMENT_LABELS[sale.paymentMethod]
                     : "—"}
+                  {sale.paymentMethod === "CREDITO" && sale.installments > 1
+                    ? ` · ${sale.installments}x`
+                    : ""}
                 </dd>
               </div>
               <div>

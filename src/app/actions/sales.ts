@@ -20,6 +20,8 @@ import {
 } from "@/lib/billing/entitlements";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { formatBRL } from "@/lib/format";
+import { cartInstallmentsLimit } from "@/lib/installments";
+import { isCreditPayment, saleUnitPriceCents } from "@/lib/pricing";
 import { applyMovement, StockError } from "@/lib/stock";
 import {
   checkoutSchema,
@@ -76,8 +78,12 @@ export async function finalizeSaleAction(
     };
   }
 
-  const { items, customerId, discountCents, paymentMethod, notes } = parsed.data;
+  const { items, customerId, discountCents, paymentMethod, installments, notes } =
+    parsed.data;
   const productIds = [...new Set(items.map((item) => item.productId))];
+  // O formulário só escolhe a forma de pagamento; o valor unitário é decidido
+  // aqui, a partir do cadastro — o carrinho do cliente não manda preço.
+  const isCredit = isCreditPayment(paymentMethod);
 
   let saleCustomerId: string | null = null;
   if (customerId) {
@@ -121,6 +127,8 @@ export async function finalizeSaleAction(
           code: products.code,
           name: products.name,
           priceCents: products.priceCents,
+          creditPriceCents: products.creditPriceCents,
+          maxInstallments: products.installments,
           costCents: products.costCents,
         })
         .from(products)
@@ -146,7 +154,9 @@ export async function finalizeSaleAction(
 
         // Preço negativo inverteria o sinal da venda e do lançamento no caixa.
         // Só chega aqui por cadastro antigo, anterior à validação do formulário.
-        if (product.priceCents < 0) {
+        const unitPriceCents = saleUnitPriceCents(product, isCredit);
+
+        if (unitPriceCents < 0) {
           throw new StockError(
             `O produto "${product.name}" está com preço negativo. Corrija o cadastro antes de vender.`,
           );
@@ -155,9 +165,16 @@ export async function finalizeSaleAction(
         return {
           product,
           quantity: item.quantity,
-          totalCents: product.priceCents * item.quantity,
+          unitPriceCents,
+          totalCents: unitPriceCents * item.quantity,
         };
       });
+
+      // O PDV já limita ao item mais restritivo; repetir o corte aqui impede
+      // que um POST manual anuncie mais parcelas do que a loja oferece.
+      const maxInstallments = cartInstallmentsLimit(
+        lines.map((line) => line.product.maxInstallments),
+      );
 
       const subtotalCents = lines.reduce((sum, line) => sum + line.totalCents, 0);
       const appliedDiscount = Math.min(Math.max(discountCents, 0), subtotalCents);
@@ -187,6 +204,8 @@ export async function finalizeSaleAction(
           discountCents: appliedDiscount,
           totalCents,
           paymentMethod,
+          // Parcela só existe no crédito; nas outras formas o valor fica em 1.
+          installments: isCredit ? Math.min(installments, maxInstallments) : 1,
           notes,
           closedAt: new Date(),
         })
@@ -199,7 +218,7 @@ export async function finalizeSaleAction(
           code: line.product.code,
           name: line.product.name,
           quantity: line.quantity,
-          unitPriceCents: line.product.priceCents,
+          unitPriceCents: line.unitPriceCents,
           unitCostCents: line.product.costCents,
           totalCents: line.totalCents,
         })),

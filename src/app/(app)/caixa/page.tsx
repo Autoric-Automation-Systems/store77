@@ -20,6 +20,8 @@ export default async function CaixaPage() {
         name: products.name,
         unit: products.unit,
         priceCents: products.priceCents,
+        creditPriceCents: products.creditPriceCents,
+        installments: products.installments,
         quantity: products.quantity,
         categoryId: products.categoryId,
         categoryName: categories.name,

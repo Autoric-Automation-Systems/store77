@@ -27,6 +27,7 @@ export type SaleRow = {
   discountCents: number;
   totalCents: number;
   paymentMethod: Sale["paymentMethod"];
+  installments: number;
   customerName: string | null;
   sellerName: string | null;
   items: SaleItemRow[];
@@ -115,6 +116,9 @@ export function SalesTable({
                     {sale.paymentMethod
                       ? PAYMENT_LABELS[sale.paymentMethod]
                       : "—"}
+                    {sale.paymentMethod === "CREDITO" && sale.installments > 1
+                      ? ` · ${sale.installments}x`
+                      : ""}
                   </td>
                   <td className="hidden px-3 py-3 sm:table-cell sm:px-5">
                     <Badge tone={STATUS_TONES[sale.status]}>

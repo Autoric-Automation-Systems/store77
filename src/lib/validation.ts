@@ -34,6 +34,26 @@ export const moneySchema = z
   .refine((cents) => cents <= MAX_INT4, "Valor acima do limite permitido");
 
 /**
+ * Valor monetário opcional: campo em branco vira `null` (a loja não cobra
+ * diferente nesse cenário), e não zero, que seria um preço de graça.
+ */
+export const optionalMoneySchema = z
+  .union([z.string(), z.number(), z.null(), z.undefined()])
+  .transform((value) => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === "string" && value.trim() === "") return null;
+    return parseMoneyToCents(value);
+  })
+  .refine(
+    (cents) => cents === null || cents >= 0,
+    "Informe um valor igual ou maior que zero",
+  )
+  .refine(
+    (cents) => cents === null || cents <= MAX_INT4,
+    "Valor acima do limite permitido",
+  );
+
+/**
  * WhatsApp é usado para montar o link `wa.me`, que exige o número em formato
  * internacional: código do país + DDD + número, só dígitos. Aceitamos a digitação
  * com pontuação e limpamos aqui, mas o código do país precisa vir.
@@ -142,43 +162,63 @@ export const categorySchema = z.object({
   description: optionalText(240),
 });
 
-export const productSchema = z.object({
-  id: z.string().uuid().optional(),
-  code: z
-    .string()
-    .trim()
-    .min(1, "Informe o código")
-    .max(40, "O código deve ter no máximo 40 caracteres"),
-  name: z
-    .string()
-    .trim()
-    .min(2, "Informe a descrição")
-    .max(160, "A descrição deve ter no máximo 160 caracteres"),
-  description: optionalText(2000),
-  categoryId: z
-    .string()
-    .trim()
-    .optional()
-    .transform((value) => (value && value.length > 0 ? value : null)),
-  barcode: optionalText(60),
-  unit: z.string().trim().max(6).default("UN"),
-  priceCents: moneySchema,
-  costCents: moneySchema,
-  quantity: z.coerce
-    .number()
-    .int()
-    .min(0, "Quantidade não pode ser negativa")
-    .max(MAX_INT4, "Quantidade acima do limite permitido"),
-  minQuantity: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .max(MAX_INT4, "Quantidade acima do limite permitido")
-    .default(0),
-  location: optionalText(120),
-  active: booleanField.default(true),
-  images: z.array(z.string().trim().min(1)).max(8).default([]),
-});
+export const MAX_INSTALLMENTS = 12;
+
+export const productSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    code: z
+      .string()
+      .trim()
+      .min(1, "Informe o código")
+      .max(40, "O código deve ter no máximo 40 caracteres"),
+    name: z
+      .string()
+      .trim()
+      .min(2, "Informe a descrição")
+      .max(160, "A descrição deve ter no máximo 160 caracteres"),
+    description: optionalText(2000),
+    categoryId: z
+      .string()
+      .trim()
+      .optional()
+      .transform((value) => (value && value.length > 0 ? value : null)),
+    barcode: optionalText(60),
+    unit: z.string().trim().max(6).default("UN"),
+    priceCents: moneySchema,
+    costCents: moneySchema,
+    creditPriceCents: optionalMoneySchema,
+    installments: z.coerce
+      .number()
+      .int()
+      .min(1, "Informe ao menos 1x")
+      .max(MAX_INSTALLMENTS, `Use no máximo ${MAX_INSTALLMENTS} parcelas`)
+      .default(1),
+    quantity: z.coerce
+      .number()
+      .int()
+      .min(0, "Quantidade não pode ser negativa")
+      .max(MAX_INT4, "Quantidade acima do limite permitido"),
+    minQuantity: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(MAX_INT4, "Quantidade acima do limite permitido")
+      .default(0),
+    location: optionalText(120),
+    active: booleanField.default(true),
+    images: z.array(z.string().trim().min(1)).max(8).default([]),
+  })
+  // Preço de crédito menor que o à vista é erro de digitação: inverteria o
+  // desconto anunciado na vitrine.
+  .refine(
+    (data) =>
+      data.creditPriceCents === null || data.creditPriceCents >= data.priceCents,
+    {
+      path: ["creditPriceCents"],
+      message: "O preço no crédito não pode ser menor que o preço à vista",
+    },
+  );
 
 export const stockMovementSchema = z.object({
   productId: z.string().uuid("Selecione um produto"),
@@ -259,6 +299,12 @@ export const checkoutSchema = z.object({
     .transform((value) => (value && value.length > 0 ? value : null)),
   discountCents: moneySchema.default(0),
   paymentMethod: z.enum(["DINHEIRO", "PIX", "DEBITO", "CREDITO", "OUTRO"]),
+  installments: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_INSTALLMENTS, `Use no máximo ${MAX_INSTALLMENTS} parcelas`)
+    .default(1),
   notes: optionalText(300),
 });
 

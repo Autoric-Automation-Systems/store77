@@ -16,6 +16,7 @@ import {
 import { toAbsoluteUrl } from "@/lib/blob";
 import { getStoreAccess } from "@/lib/billing/entitlements";
 import { formatBRL } from "@/lib/format";
+import { installmentLabel, installmentPlan } from "@/lib/installments";
 import { COMPANY, PRODUCT } from "@/lib/legal";
 import { hexToRgbChannels } from "@/lib/slug";
 
@@ -60,7 +61,17 @@ export async function generateMetadata({
 
 type CatalogProduct = Pick<
   Product,
-  "id" | "code" | "name" | "description" | "priceCents" | "quantity" | "unit" | "minQuantity" | "categoryId"
+  | "id"
+  | "code"
+  | "name"
+  | "description"
+  | "priceCents"
+  | "creditPriceCents"
+  | "installments"
+  | "quantity"
+  | "unit"
+  | "minQuantity"
+  | "categoryId"
 > & { coverUrl: string | null };
 
 function whatsappLink(whatsapp: string, storeName: string, product?: CatalogProduct) {
@@ -85,6 +96,12 @@ function ProductCard({
   storeName: string;
 }) {
   const available = product.quantity > 0;
+  const plan = installmentPlan(
+    product.priceCents,
+    product.creditPriceCents,
+    product.installments,
+  );
+  const planLabel = installmentLabel(plan);
 
   return (
     <article className="snap-start overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-sm">
@@ -120,9 +137,20 @@ function ProductCard({
           {product.code}
           {available ? ` · ${product.quantity} ${product.unit} em estoque` : ""}
         </p>
-        <p className="text-lg font-bold" style={{ color: primaryColor }}>
-          {formatBRL(product.priceCents)}
-        </p>
+        <div className="mt-0.5">
+          <p className="flex flex-wrap items-baseline gap-x-1.5">
+            <span
+              className="text-lg font-bold"
+              style={{ color: primaryColor }}
+            >
+              {formatBRL(product.priceCents)}
+            </span>
+            <span className="text-[11px] font-medium text-ink-500">à vista</span>
+          </p>
+          {planLabel ? (
+            <p className="text-xs font-semibold text-ink-600">{planLabel}</p>
+          ) : null}
+        </div>
 
         {whatsapp ? (
           <a
@@ -167,6 +195,8 @@ export default async function PublicStorePage({
         name: products.name,
         description: products.description,
         priceCents: products.priceCents,
+        creditPriceCents: products.creditPriceCents,
+        installments: products.installments,
         quantity: products.quantity,
         unit: products.unit,
         minQuantity: products.minQuantity,

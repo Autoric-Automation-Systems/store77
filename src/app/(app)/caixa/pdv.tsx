@@ -6,7 +6,9 @@ import { finalizeSaleAction } from "@/app/actions/sales";
 import { SubmitButton } from "@/components/submit-button";
 import { Alert, Card, CardHeader, EmptyState } from "@/components/ui";
 import { formatBRL, parseMoneyToCents } from "@/lib/format";
-import type { ActionState } from "@/lib/validation";
+import { cartInstallmentsLimit, splitInstallments } from "@/lib/installments";
+import { isCreditPayment, saleUnitPriceCents } from "@/lib/pricing";
+import { MAX_INSTALLMENTS, type ActionState } from "@/lib/validation";
 
 export type PdvProduct = {
   id: string;
@@ -14,6 +16,9 @@ export type PdvProduct = {
   name: string;
   unit: string;
   priceCents: number;
+  creditPriceCents: number | null;
+  /** Máximo de parcelas sem juros anunciado para o produto. */
+  installments: number;
   quantity: number;
   categoryId: string | null;
   categoryName: string | null;
@@ -36,6 +41,11 @@ type CartLine = { productId: string; quantity: number };
 
 const initialState: ActionState = { ok: false };
 
+const INSTALLMENT_OPTIONS = Array.from(
+  { length: MAX_INSTALLMENTS },
+  (_, index) => index + 1,
+);
+
 export function Pdv({
   products,
   categories,
@@ -51,6 +61,7 @@ export function Pdv({
   const [categoryId, setCategoryId] = useState("");
   const [customerId, setCustomerId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("DINHEIRO");
+  const [installments, setInstallments] = useState(1);
   const [discount, setDiscount] = useState("");
   const [notes, setNotes] = useState("");
   // Evita limpar o carrinho duas vezes para o mesmo resultado da action.
@@ -73,15 +84,33 @@ export function Pdv({
     });
   }, [products, query, categoryId]);
 
+  // Espelha o cálculo da action: no crédito vale o preço cheio do cadastro.
+  const isCredit = isCreditPayment(paymentMethod);
+
+  function unitPriceCents(product: PdvProduct): number {
+    return saleUnitPriceCents(product, isCredit);
+  }
+
   const subtotalCents = cart.reduce((sum, line) => {
     const product = byId.get(line.productId);
-    return product ? sum + product.priceCents * line.quantity : sum;
+    return product ? sum + unitPriceCents(product) * line.quantity : sum;
   }, 0);
   const discountCents = Math.min(
     Math.max(parseMoneyToCents(discount), 0),
     subtotalCents,
   );
   const totalCents = subtotalCents - discountCents;
+
+  // O parcelamento anunciado vale para o item mais restritivo do carrinho:
+  // oferecer 12x com um produto de 3x faria o cliente contratar o que a loja
+  // não oferece.
+  const maxInstallments = cartInstallmentsLimit(
+    cart.map((line) => byId.get(line.productId)?.installments ?? 1),
+  );
+  const chosenInstallments = Math.min(Math.max(installments, 1), maxInstallments);
+  const creditPlan = isCredit
+    ? splitInstallments(totalCents, chosenInstallments)
+    : null;
 
   useEffect(() => {
     if (!state.ok || !state.message) return;
@@ -92,6 +121,7 @@ export function Pdv({
     setDiscount("");
     setNotes("");
     setCustomerId("");
+    setInstallments(1);
   }, [state]);
 
   function quantityInCart(productId: string): number {
@@ -212,8 +242,15 @@ export function Pdv({
                         {product.categoryName ? ` · ${product.categoryName}` : ""}
                       </span>
                       <span className="mt-1 block text-sm font-bold text-brand-700">
-                        {formatBRL(product.priceCents)}
+                        {formatBRL(unitPriceCents(product))}
                       </span>
+                      {isCredit ? (
+                        <span className="mt-0.5 block text-xs text-ink-500">
+                          {product.creditPriceCents !== null
+                            ? `crédito · à vista ${formatBRL(product.priceCents)}`
+                            : "mesmo preço no crédito"}
+                        </span>
+                      ) : null}
                       {inCart > 0 ? (
                         <span className="mt-1 block text-xs font-semibold text-ink-600">
                           {inCart} no carrinho
@@ -258,8 +295,8 @@ export function Pdv({
                         {product.name}
                       </p>
                       <p className="text-xs text-ink-500">
-                        {formatBRL(product.priceCents)} × {line.quantity} ={" "}
-                        {formatBRL(product.priceCents * line.quantity)}
+                        {formatBRL(unitPriceCents(product))} × {line.quantity} ={" "}
+                        {formatBRL(unitPriceCents(product) * line.quantity)}
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
@@ -340,6 +377,28 @@ export function Pdv({
               </select>
             </div>
 
+            {isCredit && maxInstallments >= 2 ? (
+              <div>
+                <label className="label" htmlFor="installments">
+                  Parcelas sem juros
+                </label>
+                <select
+                  id="installments"
+                  className="input"
+                  value={chosenInstallments}
+                  onChange={(event) => setInstallments(Number(event.target.value))}
+                >
+                  {INSTALLMENT_OPTIONS.filter(
+                    (count) => count <= maxInstallments,
+                  ).map((count) => (
+                    <option key={count} value={count}>
+                      {count}x
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+
             <div>
               <label className="label" htmlFor="discountCents">
                 Desconto (R$)
@@ -378,7 +437,9 @@ export function Pdv({
 
           <dl className="space-y-1 border-t border-ink-200 pt-4 text-sm">
             <div className="flex justify-between">
-              <dt className="text-ink-500">Subtotal</dt>
+              <dt className="text-ink-500">
+                Subtotal{isCredit ? " (crédito)" : ""}
+              </dt>
               <dd className="font-medium">{formatBRL(subtotalCents)}</dd>
             </div>
             <div className="flex justify-between">
@@ -391,7 +452,23 @@ export function Pdv({
               <dt className="font-semibold text-ink-900">Total</dt>
               <dd className="font-bold text-ink-900">{formatBRL(totalCents)}</dd>
             </div>
+            {creditPlan ? (
+              <div className="flex justify-between text-xs text-ink-500">
+                <dt>Parcelas</dt>
+                <dd>
+                  {creditPlan.count}x de{" "}
+                  {formatBRL(creditPlan.installmentCents)} sem juros
+                </dd>
+              </div>
+            ) : null}
+            {isCredit && cart.length > 0 && maxInstallments < 2 ? (
+              <p className="text-xs text-ink-500">
+                Os itens do carrinho não têm parcelamento cadastrado.
+              </p>
+            ) : null}
           </dl>
+
+          <input type="hidden" name="installments" value={chosenInstallments} />
 
           {state.fieldErrors?.items ? (
             <p className="text-xs text-red-600">{state.fieldErrors.items}</p>

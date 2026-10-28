@@ -32,6 +32,7 @@ export default async function VendasPage({
       discountCents: sales.discountCents,
       totalCents: sales.totalCents,
       paymentMethod: sales.paymentMethod,
+      installments: sales.installments,
       customerName: customers.name,
       sellerName: users.name,
     })

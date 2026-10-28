@@ -267,6 +267,10 @@ export const products = pgTable(
     unit: text("unit").notNull().default("UN"),
     priceCents: integer("price_cents").notNull().default(0),
     costCents: integer("cost_cents").notNull().default(0),
+    // Preço cheio no cartão. Nulo = a loja não diferencia do preço à vista.
+    creditPriceCents: integer("credit_price_cents"),
+    // Vezes sem juros anunciadas na vitrine. 1 = somente à vista.
+    installments: integer("installments").notNull().default(1),
     quantity: integer("quantity").notNull().default(0),
     minQuantity: integer("min_quantity").notNull().default(0),
     location: text("location"),
@@ -396,6 +400,9 @@ export const sales = pgTable(
     discountCents: integer("discount_cents").notNull().default(0),
     totalCents: integer("total_cents").notNull().default(0),
     paymentMethod: paymentMethod("payment_method"),
+    // Parcelas do crédito; 1 nas demais formas de pagamento. Sempre sem juros,
+    // então não altera o total — é o que o cliente vai ver na fatura do cartão.
+    installments: integer("installments").notNull().default(1),
     notes: text("notes"),
     closedAt: timestamp("closed_at", { withTimezone: true }),
     ...timestamps,

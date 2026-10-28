@@ -43,6 +43,20 @@
       "when": 1792329472007,
       "tag": "0005_affiliate_payouts",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793212318355,
+      "tag": "0006_product_credit_price",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793215863333,
+      "tag": "0007_sale_installments",
+      "breakpoints": true
     }
   ]
 }

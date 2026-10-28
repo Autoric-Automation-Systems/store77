@@ -12,6 +12,7 @@ import {
 } from "@/db/schema";
 import { isAdminRole, requireUser } from "@/lib/auth";
 import { formatBRL, formatDateTime } from "@/lib/format";
+import { installmentPlan } from "@/lib/installments";
 import { Badge, Card, CardHeader, EmptyState, Stat } from "@/components/ui";
 import { ProductForm } from "../produto-form";
 import { ProductActions } from "./product-actions";
@@ -49,6 +50,8 @@ export default async function ProdutoPage({
       unit: products.unit,
       priceCents: products.priceCents,
       costCents: products.costCents,
+      creditPriceCents: products.creditPriceCents,
+      installments: products.installments,
       quantity: products.quantity,
       minQuantity: products.minQuantity,
       location: products.location,
@@ -93,6 +96,11 @@ export default async function ProdutoPage({
   ]);
 
   const isAdmin = isAdminRole(user.role);
+  const plan = installmentPlan(
+    product.priceCents,
+    product.creditPriceCents,
+    product.installments,
+  );
   const margin =
     product.priceCents > 0
       ? Math.round(
@@ -141,7 +149,15 @@ export default async function ProdutoPage({
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Saldo atual" value={`${product.quantity} ${product.unit}`} />
-        <Stat label="Preço de venda" value={formatBRL(product.priceCents)} />
+        <Stat
+          label="Preço de venda"
+          value={formatBRL(product.priceCents)}
+          hint={
+            plan
+              ? `${plan.count}x de ${formatBRL(plan.installmentCents)}`
+              : "somente à vista"
+          }
+        />
         <Stat label="Custo" value={formatBRL(product.costCents)} />
         <Stat
           label="Margem bruta"
@@ -165,6 +181,8 @@ export default async function ProdutoPage({
                 unit: product.unit,
                 priceCents: product.priceCents,
                 costCents: product.costCents,
+                creditPriceCents: product.creditPriceCents,
+                installments: product.installments,
                 quantity: product.quantity,
                 minQuantity: product.minQuantity,
                 location: product.location,
