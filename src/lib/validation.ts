@@ -275,6 +275,25 @@ export const storeSettingsSchema = z.object({
   showOutOfStock: booleanField.default(false),
 });
 
+/**
+ * Dados fiscais da loja, exigidos pelo gateway antes da primeira cobrança.
+ * Ficam separados das configurações da vitrine porque só o proprietário os
+ * altera e eles valem como contraparte do pagamento.
+ */
+export const billingProfileSchema = z.object({
+  legalName: z
+    .string()
+    .trim()
+    .min(3, "Informe a razão social ou o nome completo")
+    .max(160, "Use no máximo 160 caracteres"),
+  document: z
+    .string()
+    .trim()
+    .transform((value) => onlyDigits(value))
+    .refine(isValidDocument, "Informe um CPF ou CNPJ válido"),
+  email: emailSchema,
+});
+
 export const teamMemberSchema = z.object({
   name: z.string().trim().min(2, "Informe o nome").max(120),
   email: emailSchema,

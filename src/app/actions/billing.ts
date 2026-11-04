@@ -19,7 +19,14 @@ import {
   PRICE_VERSION,
   type PlanCode,
 } from "@/lib/billing/plans";
+import { isValidDocument } from "@/lib/document";
 import { todayISO } from "@/lib/format";
+import {
+  billingProfileSchema,
+  fieldErrorsFrom,
+  formToObject,
+  type ActionState,
+} from "@/lib/validation";
 
 /**
  * Ações de cobrança. Todo valor é recalculado aqui a partir do catálogo: o
@@ -30,11 +37,29 @@ function backWithError(message: string): never {
   redirect(`/assinatura?erro=${encodeURIComponent(message)}`);
 }
 
+/** Primeira mensagem do Asaas. É escrita para o lojista, não para o log. */
+function asaasDetail(error: AsaasError): string | null {
+  const body = error.body as { errors?: { description?: string }[] } | null;
+  const description = body?.errors?.find((item) => item?.description)
+    ?.description;
+  return description ? description.trim().slice(0, 160) : null;
+}
+
 function errorMessage(error: unknown): string {
-  if (error instanceof AsaasError && error.status === 401) {
-    return "O gateway recusou a credencial de cobrança. Fale com o suporte.";
-  }
   console.error("Falha na cobrança", error);
+
+  if (error instanceof AsaasError) {
+    if (error.status === 401 || error.status === 403) {
+      return "O gateway recusou a credencial de cobrança. Fale com o suporte.";
+    }
+    // 400 é erro de dados: esconder a descrição deixa o lojista sem saber o
+    // que corrigir, e a mensagem do Asaas já vem em português e é acionável.
+    const detail = asaasDetail(error);
+    if (error.status === 400 && detail) {
+      return `Não foi possível iniciar a cobrança: ${detail}`;
+    }
+  }
+
   return "Não foi possível falar com o gateway de pagamento. Tente novamente em instantes.";
 }
 
@@ -57,6 +82,12 @@ export async function selectPlanAction(formData: FormData): Promise<void> {
 
   if (!overview.access.capabilities.manageTeam) {
     backWithError(overview.access.reason);
+  }
+
+  if (!asaas().isConfigured) {
+    backWithError(
+      "A contratação online ainda não está habilitada. Fale com o suporte para ativar seu plano.",
+    );
   }
 
   const amountCents = periodTotalCents(
@@ -112,6 +143,14 @@ export async function selectPlanAction(formData: FormData): Promise<void> {
     .from(stores)
     .where(eq(stores.id, user.storeId))
     .limit(1);
+
+  // O Asaas exige CPF/CNPJ no cadastro do cliente. Sem esse dado a chamada
+  // voltaria 400 e o lojista veria só um erro genérico, sem saber o que fazer.
+  if (!isValidDocument(store?.document ?? "")) {
+    backWithError(
+      "Informe o CPF ou CNPJ da loja em Dados de cobrança antes de contratar.",
+    );
+  }
 
   let checkout;
   try {
@@ -170,6 +209,40 @@ export async function selectPlanAction(formData: FormData): Promise<void> {
   }
 
   redirect(checkout.checkoutUrl);
+}
+
+export async function saveBillingProfileAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireOwner();
+  const parsed = billingProfileSchema.safeParse(formToObject(formData));
+
+  if (!parsed.success) {
+    const values: Record<string, string> = {};
+    for (const [key, value] of formData.entries()) {
+      if (typeof value === "string") values[key] = value;
+    }
+    return {
+      ok: false,
+      message: "Verifique os campos destacados.",
+      fieldErrors: fieldErrorsFrom(parsed.error),
+      values,
+    };
+  }
+
+  await db()
+    .update(stores)
+    .set({
+      legalName: parsed.data.legalName,
+      document: parsed.data.document,
+      email: parsed.data.email,
+      updatedAt: new Date(),
+    })
+    .where(eq(stores.id, user.storeId));
+
+  revalidatePath("/assinatura");
+  return { ok: true, message: "Dados de cobrança salvos." };
 }
 
 export async function updateAddonsAction(formData: FormData): Promise<void> {

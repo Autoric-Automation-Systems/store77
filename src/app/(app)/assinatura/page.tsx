@@ -3,6 +3,9 @@ import {
   selectPlanAction,
   updateAddonsAction,
 } from "@/app/actions/billing";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { stores } from "@/db/schema";
 import { SubmitButton } from "@/components/submit-button";
 import { Alert, Badge, Card, CardHeader, PageHeader, Stat } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
@@ -15,8 +18,10 @@ import {
   periodTotalCents,
 } from "@/lib/billing/plans";
 import { formatBRL, formatDate } from "@/lib/format";
+import { isValidDocument } from "@/lib/document";
 import { canManageBilling } from "@/lib/roles";
 import Link from "next/link";
+import { BillingProfileCard } from "./billing-profile-card";
 
 export const metadata = { title: "Assinatura" };
 
@@ -70,6 +75,18 @@ export default async function AssinaturaPage({
     extraStores: subscription?.extraStores ?? 0,
     extraSalesPacks: subscription?.extraSalesPacks ?? 0,
   };
+
+  const [store] = await db()
+    .select({
+      legalName: stores.legalName,
+      document: stores.document,
+      email: stores.email,
+    })
+    .from(stores)
+    .where(eq(stores.id, user.storeId))
+    .limit(1);
+
+  const hasBillingDocument = isValidDocument(store?.document ?? "");
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -200,6 +217,15 @@ export default async function AssinaturaPage({
             </div>
           </dl>
         </Card>
+      ) : null}
+
+      {isOwner ? (
+        <BillingProfileCard
+          legalName={store?.legalName ?? ""}
+          document={store?.document ?? ""}
+          email={store?.email ?? user.email}
+          missing={!hasBillingDocument}
+        />
       ) : null}
 
       <Card>

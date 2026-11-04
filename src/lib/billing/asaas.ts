@@ -147,16 +147,30 @@ class AsaasProvider implements BillingProvider {
   }
 
   async createCheckout(input: CheckoutInput): Promise<CheckoutResult> {
-    const customer = await this.request<{ id: string }>("/customers", {
-      method: "POST",
-      body: {
-        name: input.customer.name,
-        email: input.customer.email,
-        cpfCnpj: onlyDigits(input.customer.document),
-        externalReference: input.customer.externalReference,
-        notificationDisabled: false,
-      },
-    });
+    const document = onlyDigits(input.customer.document);
+    if (!document) {
+      throw new AsaasError(400, {
+        errors: [
+          { description: "Informe o CPF ou CNPJ da loja para contratar." },
+        ],
+      });
+    }
+
+    // O Asaas recusa um segundo cliente com o mesmo CPF/CNPJ. Retomar uma
+    // contratação interrompida precisa reaproveitar o cadastro já existente,
+    // senão a loja fica presa no erro a cada nova tentativa.
+    const customer =
+      (await this.findCustomerByDocument(document)) ??
+      (await this.request<{ id: string }>("/customers", {
+        method: "POST",
+        body: {
+          name: input.customer.name,
+          email: input.customer.email,
+          cpfCnpj: document,
+          externalReference: input.customer.externalReference,
+          notificationDisabled: false,
+        },
+      }));
 
     const subscription = await this.request<{ id: string }>("/subscriptions", {
       method: "POST",
@@ -190,6 +204,20 @@ class AsaasProvider implements BillingProvider {
       providerSubscriptionId: subscription.id,
       checkoutUrl,
     };
+  }
+
+  private async findCustomerByDocument(
+    document: string,
+  ): Promise<{ id: string } | null> {
+    try {
+      const result = await this.request<{ data?: { id: string }[] }>(
+        `/customers?cpfCnpj=${encodeURIComponent(document)}&limit=1`,
+      );
+      return result.data?.[0] ?? null;
+    } catch {
+      // Consulta é otimização: se falhar, criar o cliente ainda pode funcionar.
+      return null;
+    }
   }
 
   async cancelSubscription(providerSubscriptionId: string): Promise<void> {
