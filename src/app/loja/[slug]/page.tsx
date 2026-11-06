@@ -1,24 +1,16 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { headers } from "next/headers";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, eq, inArray, ne } from "drizzle-orm";
-import { MapPin, MessageCircle, Package, Phone } from "lucide-react";
 import { db } from "@/db";
-import {
-  categories,
-  productImages,
-  products,
-  stores,
-  type Product,
-} from "@/db/schema";
+import { categories, productImages, products, stores } from "@/db/schema";
 import { toAbsoluteUrl } from "@/lib/blob";
 import { getStoreAccess } from "@/lib/billing/entitlements";
-import { formatBRL } from "@/lib/format";
-import { installmentLabel, installmentPlan } from "@/lib/installments";
-import { COMPANY, PRODUCT } from "@/lib/legal";
 import { hexToRgbChannels } from "@/lib/slug";
+import { CatalogCard, type StorefrontProduct } from "./catalog-card";
+import { whatsappLink } from "./links";
+import { StoreFooter, StoreHeader } from "./store-chrome";
 
 export const dynamic = "force-dynamic";
 
@@ -57,116 +49,6 @@ export async function generateMetadata({
   } catch {
     return { title: "Loja" };
   }
-}
-
-type CatalogProduct = Pick<
-  Product,
-  | "id"
-  | "code"
-  | "name"
-  | "description"
-  | "priceCents"
-  | "creditPriceCents"
-  | "installments"
-  | "quantity"
-  | "unit"
-  | "minQuantity"
-  | "categoryId"
-> & { coverUrl: string | null };
-
-function whatsappLink(whatsapp: string, storeName: string, product?: CatalogProduct) {
-  const digits = whatsapp.replace(/\D/g, "");
-  const text = product
-    ? `Olá! Vi "${product.name}" (${product.code}) na vitrine de ${storeName} e gostaria de mais informações.`
-    : `Olá! Gostaria de mais informações sobre os produtos de ${storeName}.`;
-  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
-}
-
-function ProductCard({
-  product,
-  primaryColor,
-  accentColor,
-  whatsapp,
-  storeName,
-}: {
-  product: CatalogProduct;
-  primaryColor: string;
-  accentColor: string;
-  whatsapp: string | null;
-  storeName: string;
-}) {
-  const available = product.quantity > 0;
-  const plan = installmentPlan(
-    product.priceCents,
-    product.creditPriceCents,
-    product.installments,
-  );
-  const planLabel = installmentLabel(plan);
-
-  return (
-    <article className="snap-start overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-sm">
-      <div className="relative aspect-square bg-ink-100">
-        {product.coverUrl ? (
-          <Image
-            src={product.coverUrl}
-            alt={product.name}
-            fill
-            sizes="(max-width: 640px) 60vw, 240px"
-            className="object-cover"
-            unoptimized
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-ink-300">
-            <Package className="size-10" />
-          </div>
-        )}
-
-        <span
-          className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold text-white"
-          style={{ backgroundColor: available ? primaryColor : "#64748b" }}
-        >
-          {available ? "Disponível" : "Indisponível"}
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-2 p-4">
-        <h3 className="line-clamp-2 text-sm font-semibold text-ink-900">
-          {product.name}
-        </h3>
-        <p className="text-xs text-ink-400">
-          {product.code}
-          {available ? ` · ${product.quantity} ${product.unit} em estoque` : ""}
-        </p>
-        <div className="mt-0.5">
-          <p className="flex flex-wrap items-baseline gap-x-1.5">
-            <span
-              className="text-lg font-bold"
-              style={{ color: primaryColor }}
-            >
-              {formatBRL(product.priceCents)}
-            </span>
-            <span className="text-[11px] font-medium text-ink-500">à vista</span>
-          </p>
-          {planLabel ? (
-            <p className="text-xs font-semibold text-ink-600">{planLabel}</p>
-          ) : null}
-        </div>
-
-        {whatsapp ? (
-          <a
-            href={whatsappLink(whatsapp, storeName, product)}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90"
-            style={{ backgroundColor: accentColor }}
-          >
-            <MessageCircle className="size-3.5" />
-            Pedir no WhatsApp
-          </a>
-        ) : null}
-      </div>
-    </article>
-  );
 }
 
 export default async function PublicStorePage({
@@ -233,30 +115,37 @@ export default async function PublicStorePage({
           .orderBy(asc(productImages.sortOrder))
       : [];
 
-  const coverByProduct = new Map<string, string>();
+  // A capa é a primeira foto da ordenação; o card recebe a lista completa para
+  // as setas percorrerem as demais.
+  const imagesByProduct = new Map<string, string[]>();
   for (const image of images) {
-    if (!coverByProduct.has(image.productId)) {
-      coverByProduct.set(image.productId, image.url);
-    }
+    const list = imagesByProduct.get(image.productId);
+    if (list) list.push(image.url);
+    else imagesByProduct.set(image.productId, [image.url]);
   }
 
-  const withCover: CatalogProduct[] = catalog.map((product) => ({
-    ...product,
-    coverUrl: coverByProduct.get(product.id) ?? null,
-  }));
+  const withImages: (StorefrontProduct & { categoryId: string | null })[] =
+    catalog.map((product) => ({
+      ...product,
+      images: imagesByProduct.get(product.id) ?? [],
+      href: `/loja/${store.slug}/produto/${product.id}`,
+      whatsappHref: store.whatsapp
+        ? whatsappLink(store.whatsapp, store.name, product)
+        : null,
+    }));
 
   const groups = [
     ...categoryRows.map((category) => ({
       id: category.id,
       name: category.name,
       description: category.description,
-      items: withCover.filter((product) => product.categoryId === category.id),
+      items: withImages.filter((product) => product.categoryId === category.id),
     })),
     {
       id: "sem-categoria",
       name: "Outros produtos",
       description: null as string | null,
-      items: withCover.filter((product) => !product.categoryId),
+      items: withImages.filter((product) => !product.categoryId),
     },
   ].filter((group) => group.items.length > 0);
 
@@ -269,46 +158,7 @@ export default async function PublicStorePage({
 
   return (
     <div className="min-h-screen bg-white" style={style}>
-      <header
-        className="sticky top-0 z-20 border-b border-black/5 backdrop-blur"
-        style={{ backgroundColor: "rgba(255,255,255,0.9)" }}
-      >
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
-          <div className="flex items-center gap-3">
-            {store.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={store.logoUrl}
-                alt={store.name}
-                className="size-10 rounded-xl object-contain"
-              />
-            ) : (
-              <span
-                className="flex size-10 items-center justify-center rounded-xl text-sm font-bold text-white"
-                style={{ backgroundColor: store.primaryColor }}
-              >
-                {store.name.slice(0, 2).toUpperCase()}
-              </span>
-            )}
-            <span className="font-bold tracking-tight text-ink-900">
-              {store.name}
-            </span>
-          </div>
-
-          {store.whatsapp ? (
-            <a
-              href={whatsappLink(store.whatsapp, store.name)}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold text-white"
-              style={{ backgroundColor: store.primaryColor }}
-            >
-              <MessageCircle className="size-4" />
-              Falar com a loja
-            </a>
-          ) : null}
-        </div>
-      </header>
+      <StoreHeader store={store} />
 
       <section
         className="relative overflow-hidden text-white"
@@ -406,12 +256,10 @@ export default async function PublicStorePage({
               <div className="-mx-5 mt-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2">
                 {group.items.map((product) => (
                   <div key={product.id} className="w-56 shrink-0 sm:w-60">
-                    <ProductCard
+                    <CatalogCard
                       product={product}
                       primaryColor={store.primaryColor}
                       accentColor={store.accentColor}
-                      whatsapp={store.whatsapp}
-                      storeName={store.name}
                     />
                   </div>
                 ))}
@@ -430,79 +278,7 @@ export default async function PublicStorePage({
         ) : null}
       </main>
 
-      <footer className="mt-6">
-        <div className="text-white" style={{ backgroundColor: store.secondaryColor }}>
-          <div className="mx-auto grid max-w-6xl gap-6 px-5 py-10 sm:grid-cols-3">
-            <div>
-              <p className="font-bold">{store.name}</p>
-              {store.address ? (
-                <p className="mt-2 flex items-start gap-2 text-sm text-white/70">
-                  <MapPin className="mt-0.5 size-4 shrink-0" />
-                  {store.address}
-                </p>
-              ) : null}
-            </div>
-            <div className="space-y-2 text-sm text-white/70">
-              {store.phone ? (
-                <p className="flex items-center gap-2">
-                  <Phone className="size-4" />
-                  {store.phone}
-                </p>
-              ) : null}
-              {store.email ? (
-                <p className="flex items-center gap-2">
-                  <MessageCircle className="size-4" />
-                  {store.email}
-                </p>
-              ) : null}
-            </div>
-            <p className="text-sm text-white/50 sm:text-right">
-              Catálogo atualizado automaticamente pelo estoque da loja.
-            </p>
-          </div>
-        </div>
-
-        {/*
-          Créditos em faixa clara: o logotipo do Store77 é escuro e o da AUTORIC
-          é azul, então nenhum dos dois tem contraste sobre o rodapé colorido
-          da loja.
-        */}
-        <div className="border-t border-ink-200 bg-white">
-          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 py-4 text-xs text-ink-500 sm:flex-row">
-            <Link
-              href={PRODUCT.url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 transition hover:text-ink-800"
-            >
-              <Image
-                src="/logoname.png"
-                alt="Store77"
-                width={669}
-                height={373}
-                className="h-4 w-auto"
-              />
-              <span>Loja criada com Store77</span>
-            </Link>
-
-            <Link
-              href={COMPANY.site}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 transition hover:text-ink-800"
-            >
-              <span>Desenvolvido por</span>
-              <Image
-                src="/logoDev.png"
-                alt="AUTORIC — Automação e Sistemas"
-                width={1160}
-                height={323}
-                className="h-4 w-auto"
-              />
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <StoreFooter store={store} />
     </div>
   );
 }
